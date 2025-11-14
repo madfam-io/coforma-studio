@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@coforma/types": ["../types/src"]
+    },
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "incremental": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*spec.ts"
+  ]
+}

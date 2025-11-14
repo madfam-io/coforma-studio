@@ -69,3 +69,133 @@ Built with a **LATAM-first ethos** and designed for **global scalability**, Cofo
 ## Strategic Advantage
 
 By building Coforma Studio, MADFAM both **improves its own product development cycle** and **creates a monetizable SaaS platform** for the wider market. The result is dual leverage: stronger internal innovation and recurring external revenues. This positions MADFAM as a **pioneer of Advisory-as-a-Service** and a **solarpunk innovation leader** in LATAM with global reach.
+
+---
+
+## Development Setup
+
+### Prerequisites
+
+- **Node.js** v20+ (LTS)
+- **pnpm** v8+
+- **Docker** & Docker Compose
+- **Git**
+
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/madfam-io/coforma-studio.git
+cd coforma-studio
+
+# 2. Install dependencies
+pnpm install
+
+# 3. Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your configuration
+
+# 4. Start local services (PostgreSQL, Redis, Meilisearch)
+docker-compose up -d
+
+# 5. Run database migrations
+pnpm db:migrate
+
+# 6. Seed the database (optional)
+pnpm db:seed
+
+# 7. Start development servers
+pnpm dev
+```
+
+Access the application:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:4000
+- **Prisma Studio**: http://localhost:5555 (run `pnpm db:studio`)
+
+### Project Structure
+
+```
+coforma-studio/
+├── packages/
+│   ├── web/              # Next.js frontend
+│   ├── api/              # NestJS backend
+│   ├── types/            # Shared TypeScript types
+│   └── ui/               # Shared UI components (shadcn/ui)
+├── docs/                 # Documentation
+│   ├── api-specification.md
+│   ├── database-schema.md
+│   └── deployment.md
+├── .github/
+│   └── workflows/        # CI/CD pipelines
+├── scripts/              # Utility scripts
+├── docker-compose.yml    # Local development services
+├── turbo.json            # Turborepo configuration
+└── pnpm-workspace.yaml   # pnpm workspaces
+```
+
+### Available Commands
+
+```bash
+# Development
+pnpm dev                  # Start all services in development mode
+pnpm build                # Build all packages
+pnpm test                 # Run all tests
+pnpm lint                 # Run ESLint
+pnpm format               # Format code with Prettier
+pnpm typecheck            # Run TypeScript type checking
+
+# Database
+pnpm db:migrate           # Run database migrations
+pnpm db:seed              # Seed database with sample data
+pnpm db:studio            # Open Prisma Studio (database GUI)
+pnpm db:reset             # Reset database (WARNING: deletes all data)
+```
+
+---
+
+## Documentation
+
+- **[Product Vision](./PRODUCT_VISION.md)** - Mission, vision, and guiding principles
+- **[Software Specification](./SOFTWARE_SPEC.md)** - Detailed technical requirements
+- **[Technology Stack](./TECH_STACK.md)** - Technology decisions and rationale
+- **[Operating Model](./OPERATING_MODEL.md)** - Team structure and processes
+- **[Business Development](./BIZ_DEV.md)** - Go-to-market strategy
+- **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute
+- **[Security Policy](./SECURITY.md)** - Security practices and reporting
+- **[API Specification](./docs/api-specification.md)** - API documentation
+- **[Database Schema](./docs/database-schema.md)** - Database structure and RLS policies
+- **[Deployment Guide](./docs/deployment.md)** - Deployment procedures
+
+---
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run tests and linting (`pnpm test && pnpm lint`)
+5. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+6. Push to your branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+---
+
+## License
+
+Proprietary - All Rights Reserved
+
+Copyright © 2025 Innovaciones MADFAM S.A.S. de C.V.
+
+---
+
+## Support
+
+- **Documentation**: See [docs/](./docs/) directory
+- **Issues**: [GitHub Issues](https://github.com/madfam-io/coforma-studio/issues)
+- **Email**: hello@aureolabs.dev
+- **Website**: [aureolabs.dev](https://aureolabs.dev)

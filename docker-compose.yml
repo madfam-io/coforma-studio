@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: coforma-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: coforma_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: coforma-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.5
+    container_name: coforma-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: masterKey
+      MEILI_NO_ANALYTICS: 'true'
+    ports:
+      - '7700:7700'
+    volumes:
+      - meilisearch_data:/meili_data
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:7700/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  meilisearch_data:
+    driver: local
+
+networks:
+  default:
+    name: coforma-network

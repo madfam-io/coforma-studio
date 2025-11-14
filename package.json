@@ -1,0 +1,58 @@
+{
+  "name": "coforma-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Architecture as a Service for Customer Advisory Boards",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/madfam-io/coforma-studio.git"
+  },
+  "author": "Aureo Labs <hello@aureolabs.dev>",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "prepare": "husky install",
+    "db:migrate": "pnpm --filter=api prisma migrate dev",
+    "db:deploy": "pnpm --filter=api prisma migrate deploy",
+    "db:seed": "pnpm --filter=api prisma db seed",
+    "db:studio": "pnpm --filter=api prisma studio",
+    "db:reset": "pnpm --filter=api prisma migrate reset"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "eslint": "^8.56.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.2.4",
+    "turbo": "^1.12.0",
+    "typescript": "^5.3.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

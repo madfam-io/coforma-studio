@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "importHelpers": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "incremental": true,
+    "paths": {
+      "@coforma/types": ["./packages/types/src"],
+      "@coforma/ui": ["./packages/ui/src"],
+      "@coforma/api": ["./packages/api/src"],
+      "@coforma/web": ["./packages/web/src"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".next",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}
