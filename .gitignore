@@ -1,0 +1,85 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+playwright-report/
+test-results/
+
+# Production builds
+dist/
+build/
+.next/
+out/
+
+# Misc
+.DS_Store
+*.pem
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# Railway
+.railway
+
+# Turbo
+.turbo
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma
+packages/api/prisma/migrations/*/migration.sql
+!packages/api/prisma/migrations/migration_lock.toml
+
+# Secrets (additional safety)
+*.key
+*.pem
+credentials.json
+service-account.json
+
+# OS generated files
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Storybook
+storybook-static/
+
+# ESLint cache
+.eslintcache
+
+# Sentry
+.sentryclirc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

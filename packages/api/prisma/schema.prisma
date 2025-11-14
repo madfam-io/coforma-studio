@@ -1,0 +1,680 @@
+// =============================================================================
+// COFORMA STUDIO - PRISMA SCHEMA
+// =============================================================================
+// Database: PostgreSQL 15+ with Row-Level Security (RLS)
+// ORM: Prisma 5+
+// Multi-Tenancy: Single database with tenant_id column on all tables
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "multiSchema"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto, uuid_ossp]
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum TenantRole {
+  ADMIN        // Full access to tenant settings and all features
+  FACILITATOR  // Can manage CABs, sessions, and moderate content
+  MEMBER       // CAB member with read/contribute access
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum FeedbackType {
+  IDEA
+  BUG
+  REQUEST
+  RESEARCH_INSIGHT
+}
+
+enum FeedbackStatus {
+  OPEN
+  UNDER_REVIEW
+  PLANNED
+  IN_PROGRESS
+  SHIPPED
+  CLOSED
+}
+
+enum FeedbackPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ActionItemStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum IntegrationProvider {
+  ZOOM
+  GOOGLE_MEET
+  SLACK
+  JIRA
+  ASANA
+  CLICKUP
+  GOOGLE_CALENDAR
+  HUBSPOT
+  SALESFORCE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+enum DiscountType {
+  PERCENTAGE  // e.g., 20% off
+  FIXED       // e.g., $50 off
+}
+
+enum BadgeType {
+  FOUNDING_PARTNER
+  INFLUENCER
+  TOP_CONTRIBUTOR
+  EARLY_ADOPTER
+  POWER_USER
+  STRATEGIC_ADVISOR
+}
+
+enum CaseStudyStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+}
+
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
+/// Tenant (Organization) - Top-level entity for multi-tenancy
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  slug      String   @unique // Subdomain slug (e.g., "acme" -> acme.coforma.studio)
+  name      String
+  domain    String?  @unique // Custom domain (e.g., cab.acme.com)
+  logo      String? // Cloudflare R2 URL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Branding & Customization
+  brandColor      String? // Hex color (e.g., "#3B82F6")
+  locale          String  @default("en") // en, es
+  timezone        String  @default("America/Mexico_City")
+  whitelabelEnabled Boolean @default(false) // Phase 4 feature
+
+  // Subscription & Billing
+  stripeCustomerId       String?  @unique
+  stripeSubscriptionId   String?  @unique
+  subscriptionStatus     String?  // active, trialing, past_due, canceled
+  subscriptionPlanId     String?
+  billingEmail           String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  trialEnd               DateTime?
+
+  // Relationships
+  users         User[]
+  cabs          CAB[]
+  sessions      Session[]
+  feedbackItems FeedbackItem[]
+  actionItems   ActionItem[]
+  integrations  Integration[]
+  invites       Invite[]
+  discountPlans DiscountPlan[]
+  badges        Badge[]
+  caseStudies   CaseStudy[]
+  auditLogs     AuditLog[]
+
+  @@map("tenants")
+}
+
+/// User - Individual user account (can belong to multiple tenants)
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String?
+  avatar    String? // Cloudflare R2 URL
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // NextAuth.js fields
+  emailVerified DateTime?
+  image         String?
+
+  // Relationships
+  accounts         Account[]
+  sessions         UserSession[]
+  tenantMemberships TenantMembership[]
+  cabMemberships   CABMembership[]
+  feedbackItems    FeedbackItem[]
+  actionItems      ActionItem[]
+  comments         Comment[]
+  votes            Vote[]
+  sessionAttendees SessionAttendee[]
+  referrals        Referral[]       @relation("Referrer")
+  referredBy       Referral[]       @relation("Referred")
+  badges           UserBadge[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+/// Account - OAuth/OIDC provider accounts (NextAuth.js)
+model Account {
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+/// UserSession - NextAuth.js sessions (database strategy)
+model UserSession {
+  id           String   @id @default(uuid()) @db.Uuid
+  sessionToken String   @unique
+  userId       String   @db.Uuid
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+/// VerificationToken - Email verification tokens (NextAuth.js)
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+/// TenantMembership - User membership in a tenant with role
+model TenantMembership {
+  id        String     @id @default(uuid()) @db.Uuid
+  tenantId  String     @db.Uuid
+  userId    String     @db.Uuid
+  role      TenantRole
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@map("tenant_memberships")
+}
+
+// =============================================================================
+// CAB (Customer Advisory Board) MODELS
+// =============================================================================
+
+/// CAB - Customer Advisory Board
+model CAB {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String
+  description String?  @db.Text
+  slug        String // Unique within tenant
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Settings
+  isActive     Boolean @default(true)
+  maxMembers   Int?    // Optional member cap
+  requiresNDA  Boolean @default(false)
+
+  // Relationships
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members        CABMembership[]
+  sessions       Session[]
+  feedbackItems  FeedbackItem[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("cabs")
+}
+
+/// CABMembership - User membership in a CAB with metadata
+model CABMembership {
+  id        String   @id @default(uuid()) @db.Uuid
+  cabId     String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Member metadata
+  tags         String[] // e.g., ["power_user", "influencer", "strategic"]
+  company      String?
+  title        String?
+  ndaSigned    Boolean  @default(false)
+  ndaSignedAt  DateTime?
+
+  // Discount plan assignment
+  discountPlanId String?   @db.Uuid
+  discountPlan   DiscountPlan? @relation(fields: [discountPlanId], references: [id], onDelete: SetNull)
+
+  // Relationships
+  cab  CAB  @relation(fields: [cabId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cabId, userId])
+  @@index([cabId])
+  @@index([userId])
+  @@map("cab_memberships")
+}
+
+// =============================================================================
+// SESSION MODELS
+// =============================================================================
+
+/// Session - CAB meeting/session
+model Session {
+  id          String        @id @default(uuid()) @db.Uuid
+  tenantId    String        @db.Uuid
+  cabId       String        @db.Uuid
+  title       String
+  description String?       @db.Text
+  status      SessionStatus @default(SCHEDULED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Scheduling
+  scheduledAt DateTime
+  duration    Int       @default(60) // Duration in minutes
+  endedAt     DateTime?
+
+  // Meeting details
+  meetingLink String? // Zoom, Google Meet, etc.
+  recordingUrl String? // Cloudflare R2 URL
+  agendaItems Json? // Array of {title, duration, completed}
+
+  // Relationships
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cab              CAB               @relation(fields: [cabId], references: [id], onDelete: Cascade)
+  attendees        SessionAttendee[]
+  feedbackItems    FeedbackItem[]
+  actionItems      ActionItem[]
+  minutes          SessionMinute?
+
+  @@index([tenantId])
+  @@index([cabId])
+  @@index([scheduledAt])
+  @@map("sessions")
+}
+
+/// SessionAttendee - User attendance at a session
+model SessionAttendee {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @db.Uuid
+  userId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  // Attendance tracking
+  attended Boolean  @default(false)
+  talkTime Int?     // Talk time in seconds (from Zoom/Meet analytics)
+  joinedAt DateTime?
+  leftAt   DateTime?
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([sessionId])
+  @@map("session_attendees")
+}
+
+/// SessionMinute - Meeting minutes and decisions
+model SessionMinute {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @unique @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Content
+  summary   String   @db.Text
+  decisions String[] @db.Text // Array of decision strings
+  notes     String?  @db.Text
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("session_minutes")
+}
+
+// =============================================================================
+// FEEDBACK MODELS
+// =============================================================================
+
+/// FeedbackItem - Customer feedback (idea, bug, request, research insight)
+model FeedbackItem {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  cabId       String?          @db.Uuid // Optional: linked to specific CAB
+  sessionId   String?          @db.Uuid // Optional: linked to specific session
+  userId      String           @db.Uuid // Submitter
+  title       String
+  description String           @db.Text
+  type        FeedbackType
+  status      FeedbackStatus   @default(OPEN)
+  priority    FeedbackPriority @default(MEDIUM)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Metadata
+  tags        String[] // e.g., ["mobile", "performance", "ux"]
+  attachments String[] // Cloudflare R2 URLs
+
+  // External integration (Jira, Asana, ClickUp)
+  externalId       String? // External ticket ID
+  externalProvider IntegrationProvider?
+  externalUrl      String?
+
+  // Relationships
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cab      CAB?      @relation(fields: [cabId], references: [id], onDelete: SetNull)
+  session  Session?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  votes    Vote[]
+
+  @@index([tenantId])
+  @@index([cabId])
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+  @@map("feedback_items")
+}
+
+/// Comment - Comments on feedback items
+model Comment {
+  id             String   @id @default(uuid()) @db.Uuid
+  feedbackItemId String   @db.Uuid
+  userId         String   @db.Uuid
+  content        String   @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  feedbackItem FeedbackItem @relation(fields: [feedbackItemId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackItemId])
+  @@map("comments")
+}
+
+/// Vote - Upvotes/downvotes on feedback items
+model Vote {
+  id             String   @id @default(uuid()) @db.Uuid
+  feedbackItemId String   @db.Uuid
+  userId         String   @db.Uuid
+  value          Int      // +1 (upvote) or -1 (downvote)
+  createdAt      DateTime @default(now())
+
+  feedbackItem FeedbackItem @relation(fields: [feedbackItemId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([feedbackItemId, userId])
+  @@index([feedbackItemId])
+  @@map("votes")
+}
+
+// =============================================================================
+// ACTION ITEM MODELS
+// =============================================================================
+
+/// ActionItem - Task/action item from sessions
+model ActionItem {
+  id          String           @id @default(uuid()) @db.Uuid
+  tenantId    String           @db.Uuid
+  sessionId   String?          @db.Uuid
+  title       String
+  description String?          @db.Text
+  status      ActionItemStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Assignment
+  assignedToId String? @db.Uuid
+  assignedTo   User?   @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  session Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([sessionId])
+  @@index([assignedToId])
+  @@index([status])
+  @@map("action_items")
+}
+
+// =============================================================================
+// INCENTIVES & RECOGNITION MODELS
+// =============================================================================
+
+/// DiscountPlan - Discount plan for CAB members
+model DiscountPlan {
+  id        String       @id @default(uuid()) @db.Uuid
+  tenantId  String       @db.Uuid
+  name      String
+  type      DiscountType
+  value     Decimal      @db.Decimal(10, 2) // e.g., 20.00 for 20%
+  cap       Decimal?     @db.Decimal(10, 2) // Optional max discount amount
+  expiresAt DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Renewal rules
+  autoRenew         Boolean @default(false)
+  renewalDuration   Int?    // Duration in months
+  graduationPath    String? @db.Text // Description of graduation to paid plan
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  members CABMembership[]
+
+  @@index([tenantId])
+  @@map("discount_plans")
+}
+
+/// Badge - Achievement badge
+model Badge {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  name        String
+  description String?   @db.Text
+  type        BadgeType
+  icon        String? // Cloudflare R2 URL
+  createdAt   DateTime  @default(now())
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users  UserBadge[]
+
+  @@index([tenantId])
+  @@map("badges")
+}
+
+/// UserBadge - Badge awarded to a user
+model UserBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  badgeId   String   @db.Uuid
+  awardedAt DateTime @default(now())
+  reason    String?  @db.Text
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+/// Referral - Referral tracking for CAB members
+model Referral {
+  id          String   @id @default(uuid()) @db.Uuid
+  referrerId  String   @db.Uuid // User who referred
+  referredId  String   @db.Uuid // User who was referred
+  status      String   @default("pending") // pending, approved, rewarded
+  rewardValue Decimal? @db.Decimal(10, 2) // Reward amount
+  createdAt   DateTime @default(now())
+  approvedAt  DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referred User @relation("Referred", fields: [referredId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId])
+  @@map("referrals")
+}
+
+/// CaseStudy - Published case studies
+model CaseStudy {
+  id          String            @id @default(uuid()) @db.Uuid
+  tenantId    String            @db.Uuid
+  title       String
+  content     String            @db.Text
+  status      CaseStudyStatus   @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Metadata
+  author      String? // Author name
+  thumbnail   String? // Cloudflare R2 URL
+  slug        String  // Unique within tenant
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@index([status])
+  @@map("case_studies")
+}
+
+// =============================================================================
+// INTEGRATION MODELS
+// =============================================================================
+
+/// Integration - Third-party service integration
+model Integration {
+  id        String              @id @default(uuid()) @db.Uuid
+  tenantId  String              @db.Uuid
+  provider  IntegrationProvider
+  status    IntegrationStatus   @default(CONNECTED)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // OAuth credentials (encrypted)
+  accessToken  String? @db.Text
+  refreshToken String? @db.Text
+  expiresAt    DateTime?
+
+  // Provider-specific metadata
+  metadata Json? // e.g., workspace ID, channel ID, etc.
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, provider])
+  @@index([tenantId])
+  @@map("integrations")
+}
+
+/// Invite - Email invitation to join CAB or tenant
+model Invite {
+  id        String       @id @default(uuid()) @db.Uuid
+  tenantId  String       @db.Uuid
+  email     String
+  status    InviteStatus @default(PENDING)
+  token     String       @unique // Magic link token
+  expiresAt DateTime
+  createdAt DateTime     @default(now())
+  acceptedAt DateTime?
+
+  // Invitation details
+  cabId String? @db.Uuid // Optional: specific CAB invitation
+  role  TenantRole @default(MEMBER)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([email])
+  @@map("invites")
+}
+
+// =============================================================================
+// AUDIT & COMPLIANCE MODELS
+// =============================================================================
+
+/// AuditLog - Audit trail for compliance (GDPR, LGPD)
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  userId    String?  @db.Uuid
+  action    String   // e.g., "user.created", "feedback.updated", "session.deleted"
+  resource  String   // e.g., "User", "FeedbackItem", "Session"
+  resourceId String? @db.Uuid
+  metadata  Json?    // Additional context
+  ipAddress String?
+  userAgent String?  @db.Text
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// =============================================================================
+// RLS POLICIES (Applied via migrations, not Prisma)
+// =============================================================================
+// NOTE: Row-Level Security policies are defined in SQL migrations.
+// All queries must set `current_setting('app.tenant_id')` to enforce isolation.
+//
+// Example policy (applied in migration):
+// CREATE POLICY tenant_isolation ON tenants
+//   USING (id::text = current_setting('app.tenant_id'));
+//
+// See: packages/api/prisma/migrations/YYYYMMDDHHMMSS_enable_rls/migration.sql
