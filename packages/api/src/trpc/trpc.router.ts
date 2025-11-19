@@ -28,6 +28,15 @@ import {
   getSessionByIdSchema,
   deleteSessionSchema,
 } from '../modules/session/dto/session.dto';
+import { SessionAttendeeService } from '../modules/session-attendee/session-attendee.service';
+import {
+  addAttendeeSchema,
+  bulkAddAttendeesSchema,
+  updateAttendeeSchema,
+  listAttendeesSchema,
+  getAttendeeByIdSchema,
+  removeAttendeeSchema,
+} from '../modules/session-attendee/dto/session-attendee.dto';
 
 @Injectable()
 export class TrpcRouter {
@@ -36,6 +45,7 @@ export class TrpcRouter {
     private readonly cabService: CABService,
     private readonly cabMemberService: CABMemberService,
     private readonly sessionService: SessionService,
+    private readonly sessionAttendeeService: SessionAttendeeService,
   ) {}
 
   appRouter = this.trpc.router({
@@ -247,6 +257,52 @@ export class TrpcRouter {
         .input(deleteSessionSchema)
         .mutation(async ({ input, ctx }) => {
           await this.sessionService.delete(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // Session Attendee routes - Manage session invitations and attendance
+    sessionAttendees: this.trpc.router({
+      // List attendees for a session
+      list: this.trpc.tenantProcedure
+        .input(listAttendeesSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get attendee by ID
+      getById: this.trpc.tenantProcedure
+        .input(getAttendeeByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Add single attendee to session
+      add: this.trpc.tenantProcedure
+        .input(addAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.addAttendee(ctx.tenant.id, input);
+        }),
+
+      // Bulk add attendees to session
+      bulkAdd: this.trpc.tenantProcedure
+        .input(bulkAddAttendeesSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.bulkAddAttendees(ctx.tenant.id, input);
+        }),
+
+      // Update attendee (mark attendance, set join/leave times, talk time)
+      update: this.trpc.tenantProcedure
+        .input(updateAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.update(ctx.tenant.id, input);
+        }),
+
+      // Remove attendee from session
+      remove: this.trpc.tenantProcedure
+        .input(removeAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.sessionAttendeeService.remove(ctx.tenant.id, input.id);
           return { success: true };
         }),
     }),

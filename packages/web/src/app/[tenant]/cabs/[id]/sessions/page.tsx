@@ -155,7 +155,11 @@ export default function CABSessionsPage() {
       ) : (
         <div className="space-y-4">
           {sessions.map((session) => (
-            <div key={session.id} className="bg-card border rounded-lg p-6 hover:shadow-md transition">
+            <Link
+              key={session.id}
+              href={`/${params.tenant}/cabs/${cabId}/sessions/${session.id}`}
+              className="block bg-card border rounded-lg p-6 hover:shadow-md transition"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -194,27 +198,20 @@ export default function CABSessionsPage() {
                   </div>
                   {session.meetingLink && (
                     <div className="mt-3">
-                      <a
-                        href={session.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                      >
+                      <span className="text-sm text-primary flex items-center gap-1">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
-                        Join Meeting
-                      </a>
+                        Meeting link available
+                      </span>
                     </div>
                   )}
                 </div>
-                <button className="p-2 hover:bg-accent rounded-lg transition">
-                  <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button>
+                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
