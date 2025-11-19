@@ -2,10 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 import { TrpcService } from './trpc.service';
+import { CABService } from '../modules/cab/cab.service';
+import {
+  createCABSchema,
+  updateCABSchema,
+  listCABsSchema,
+  getCABByIdSchema,
+  getCABBySlugSchema,
+  deleteCABSchema,
+} from '../modules/cab/dto/cab.dto';
 
 @Injectable()
 export class TrpcRouter {
-  constructor(private readonly trpc: TrpcService) {}
+  constructor(
+    private readonly trpc: TrpcService,
+    private readonly cabService: CABService,
+  ) {}
 
   appRouter = this.trpc.router({
     // Health check
@@ -89,32 +101,49 @@ export class TrpcRouter {
         }),
     }),
 
-    // CAB routes (placeholder - will expand)
+    // CAB routes - Full CRUD operations with tenant isolation
     cabs: this.trpc.router({
-      list: this.trpc.tenantProcedure.query(async ({ ctx }) => {
-        return ctx.prisma.cAB.findMany({
-          where: { tenantId: ctx.tenant.id },
-          orderBy: { createdAt: 'desc' },
-        });
-      }),
+      // List CABs with pagination and filtering
+      list: this.trpc.tenantProcedure
+        .input(listCABsSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findAll(ctx.tenant.id, input);
+        }),
 
+      // Get CAB by ID
+      getById: this.trpc.tenantProcedure
+        .input(getCABByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Get CAB by slug
+      getBySlug: this.trpc.tenantProcedure
+        .input(getCABBySlugSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findBySlug(ctx.tenant.id, input.slug);
+        }),
+
+      // Create CAB
       create: this.trpc.tenantProcedure
-        .input(
-          z.object({
-            name: z.string().min(1).max(100),
-            description: z.string().optional(),
-            slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
-            maxMembers: z.number().int().positive().optional(),
-            requiresNDA: z.boolean().default(false),
-          }),
-        )
+        .input(createCABSchema)
         .mutation(async ({ input, ctx }) => {
-          return ctx.prisma.cAB.create({
-            data: {
-              ...input,
-              tenantId: ctx.tenant.id,
-            },
-          });
+          return this.cabService.create(ctx.tenant.id, input);
+        }),
+
+      // Update CAB
+      update: this.trpc.tenantProcedure
+        .input(updateCABSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabService.update(ctx.tenant.id, input);
+        }),
+
+      // Delete CAB
+      delete: this.trpc.tenantProcedure
+        .input(deleteCABSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.cabService.delete(ctx.tenant.id, input.id);
+          return { success: true };
         }),
     }),
   });

@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
+import { trpc } from '../../../lib/trpc';
 
 export default function NewCABPage() {
   const router = useRouter();
   const params = useParams();
+  const utils = trpc.useUtils();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -14,8 +16,19 @@ export default function NewCABPage() {
     maxMembers: '',
     requiresNDA: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const createCABMutation = trpc.cabs.create.useMutation({
+    onSuccess: () => {
+      // Invalidate and refetch the CABs list
+      utils.cabs.list.invalidate();
+      // Navigate to CABs list
+      router.push(`/${params.tenant}/cabs`);
+    },
+    onError: (err) => {
+      setError(err.message || 'Failed to create CAB');
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -38,28 +51,15 @@ export default function NewCABPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
 
-    try {
-      // TODO: Use tRPC mutation
-      // const result = await trpc.cabs.create.mutate({
-      //   name: formData.name,
-      //   description: formData.description,
-      //   slug: formData.slug,
-      //   maxMembers: formData.maxMembers ? parseInt(formData.maxMembers) : undefined,
-      //   requiresNDA: formData.requiresNDA,
-      // });
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      router.push(`/${params.tenant}/cabs`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create CAB');
-    } finally {
-      setIsLoading(false);
-    }
+    createCABMutation.mutate({
+      name: formData.name,
+      description: formData.description || undefined,
+      slug: formData.slug,
+      maxMembers: formData.maxMembers ? parseInt(formData.maxMembers) : undefined,
+      requiresNDA: formData.requiresNDA,
+    });
   };
 
   return (
@@ -179,10 +179,10 @@ export default function NewCABPage() {
         <div className="flex gap-4 pt-4">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={createCABMutation.isPending}
             className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
           >
-            {isLoading ? 'Creating...' : 'Create CAB'}
+            {createCABMutation.isPending ? 'Creating...' : 'Create CAB'}
           </button>
           <Link
             href={`/${params.tenant}/cabs`}
