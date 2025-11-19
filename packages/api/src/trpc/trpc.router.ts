@@ -20,6 +20,14 @@ import {
   removeMemberSchema,
   inviteMemberSchema,
 } from '../modules/cab-member/dto/cab-member.dto';
+import { SessionService } from '../modules/session/session.service';
+import {
+  createSessionSchema,
+  updateSessionSchema,
+  listSessionsSchema,
+  getSessionByIdSchema,
+  deleteSessionSchema,
+} from '../modules/session/dto/session.dto';
 
 @Injectable()
 export class TrpcRouter {
@@ -27,6 +35,7 @@ export class TrpcRouter {
     private readonly trpc: TrpcService,
     private readonly cabService: CABService,
     private readonly cabMemberService: CABMemberService,
+    private readonly sessionService: SessionService,
   ) {}
 
   appRouter = this.trpc.router({
@@ -199,6 +208,45 @@ export class TrpcRouter {
         .input(removeMemberSchema)
         .mutation(async ({ input, ctx }) => {
           await this.cabMemberService.remove(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // Session routes - Full CRUD operations with tenant isolation
+    sessions: this.trpc.router({
+      // List sessions for a CAB
+      list: this.trpc.tenantProcedure
+        .input(listSessionsSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get session by ID
+      getById: this.trpc.tenantProcedure
+        .input(getSessionByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Create session
+      create: this.trpc.tenantProcedure
+        .input(createSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionService.create(ctx.tenant.id, input);
+        }),
+
+      // Update session
+      update: this.trpc.tenantProcedure
+        .input(updateSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionService.update(ctx.tenant.id, input);
+        }),
+
+      // Delete session
+      delete: this.trpc.tenantProcedure
+        .input(deleteSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.sessionService.delete(ctx.tenant.id, input.id);
           return { success: true };
         }),
     }),

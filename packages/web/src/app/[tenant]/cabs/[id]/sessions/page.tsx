@@ -7,17 +7,46 @@ import { trpc } from '../../../../../lib/trpc';
 
 export default function CABSessionsPage() {
   const params = useParams();
+  const utils = trpc.useUtils();
   const cabId = params.id as string;
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    description: '',
+    scheduledAt: '',
+    duration: 60,
+    meetingLink: '',
+  });
+  const [createError, setCreateError] = useState('');
 
   // Fetch CAB data
-  const { data: cab, isLoading } = trpc.cabs.getById.useQuery({ id: cabId });
+  const { data: cab, isLoading: cabLoading } = trpc.cabs.getById.useQuery({ id: cabId });
 
-  // TODO: Fetch sessions list
-  // const { data: sessions } = trpc.sessions.list.useQuery({ cabId });
+  // Fetch sessions list
+  const { data: sessionsData, isLoading: sessionsLoading } = trpc.sessions.list.useQuery({
+    cabId,
+    limit: 50,
+    offset: 0,
+    orderBy: 'scheduledAt',
+    orderDirection: 'desc',
+  });
+
+  // Create session mutation
+  const createMutation = trpc.sessions.create.useMutation({
+    onSuccess: () => {
+      utils.sessions.list.invalidate({ cabId });
+      utils.cabs.getById.invalidate({ id: cabId });
+      setCreateModalOpen(false);
+      setCreateForm({ title: '', description: '', scheduledAt: '', duration: 60, meetingLink: '' });
+      setCreateError('');
+    },
+    onError: (err) => {
+      setCreateError(err.message || 'Failed to create session');
+    },
+  });
 
   // Loading state
-  if (isLoading) {
+  if (cabLoading || sessionsLoading) {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center py-16">
@@ -43,8 +72,10 @@ export default function CABSessionsPage() {
     );
   }
 
-  // Placeholder sessions data
-  const sessions: any[] = [];
+  const sessions = sessionsData?.sessions || [];
+  const scheduledCount = sessions.filter((s) => s.status === 'SCHEDULED').length;
+  const inProgressCount = sessions.filter((s) => s.status === 'IN_PROGRESS').length;
+  const completedCount = sessions.filter((s) => s.status === 'COMPLETED').length;
 
   return (
     <div className="p-8">
@@ -83,19 +114,19 @@ export default function CABSessionsPage() {
       {/* Session Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">{cab._count?.sessions || 0}</p>
+          <p className="text-2xl font-bold">{sessions.length}</p>
           <p className="text-sm text-muted-foreground">Total Sessions</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{scheduledCount}</p>
           <p className="text-sm text-muted-foreground">Upcoming</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{inProgressCount}</p>
           <p className="text-sm text-muted-foreground">In Progress</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{completedCount}</p>
           <p className="text-sm text-muted-foreground">Completed</p>
         </div>
       </div>
@@ -146,7 +177,7 @@ export default function CABSessionsPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
-                      {new Date(session.scheduledAt).toLocaleDateString()}
+                      {new Date(session.scheduledAt).toLocaleDateString()} at {new Date(session.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                     <span className="flex items-center gap-1">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,10 +192,25 @@ export default function CABSessionsPage() {
                       {session._count?.attendees || 0} attendees
                     </span>
                   </div>
+                  {session.meetingLink && (
+                    <div className="mt-3">
+                      <a
+                        href={session.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        Join Meeting
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <button className="p-2 hover:bg-accent rounded-lg transition">
                   <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                   </svg>
                 </button>
               </div>
@@ -173,14 +219,17 @@ export default function CABSessionsPage() {
         </div>
       )}
 
-      {/* Create Session Modal (Placeholder) */}
+      {/* Create Session Modal */}
       {createModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold">Schedule Session</h3>
               <button
-                onClick={() => setCreateModalOpen(false)}
+                onClick={() => {
+                  setCreateModalOpen(false);
+                  setCreateError('');
+                }}
                 className="p-2 hover:bg-accent rounded-lg transition"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,20 +238,61 @@ export default function CABSessionsPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            {createError && (
+              <div className="mb-4 bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded">
+                <p className="text-sm">{createError}</p>
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setCreateError('');
+                createMutation.mutate({
+                  cabId,
+                  title: createForm.title,
+                  description: createForm.description || undefined,
+                  scheduledAt: new Date(createForm.scheduledAt),
+                  duration: createForm.duration,
+                  meetingLink: createForm.meetingLink || undefined,
+                });
+              }}
+              className="space-y-4"
+            >
               <div>
-                <label className="block text-sm font-medium mb-2">Session Title</label>
+                <label className="block text-sm font-medium mb-2">
+                  Session Title <span className="text-destructive">*</span>
+                </label>
                 <input
                   type="text"
+                  required
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
                   placeholder="Q1 Product Roadmap Review"
                   className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Date & Time</label>
+                <label className="block text-sm font-medium mb-2">Description (Optional)</label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  placeholder="Discuss upcoming features and gather feedback"
+                  rows={3}
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Date & Time <span className="text-destructive">*</span>
+                </label>
                 <input
                   type="datetime-local"
+                  required
+                  value={createForm.scheduledAt}
+                  onChange={(e) => setCreateForm({ ...createForm, scheduledAt: e.target.value })}
                   className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                 />
               </div>
@@ -213,32 +303,44 @@ export default function CABSessionsPage() {
                   type="number"
                   min="15"
                   step="15"
-                  defaultValue="60"
+                  value={createForm.duration}
+                  onChange={(e) => setCreateForm({ ...createForm, duration: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                 />
               </div>
 
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Note:</strong> Session management functionality is under development. This is a UI placeholder to demonstrate the planned workflow.
-                </p>
+              <div>
+                <label className="block text-sm font-medium mb-2">Meeting Link (Optional)</label>
+                <input
+                  type="url"
+                  value={createForm.meetingLink}
+                  onChange={(e) => setCreateForm({ ...createForm, meetingLink: e.target.value })}
+                  placeholder="https://zoom.us/j/123456789"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
-                  disabled
-                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold opacity-50 cursor-not-allowed"
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
                 >
-                  Schedule Session
+                  {createMutation.isPending ? 'Scheduling...' : 'Schedule Session'}
                 </button>
                 <button
-                  onClick={() => setCreateModalOpen(false)}
-                  className="px-4 py-3 border border-input rounded-lg font-semibold hover:bg-accent transition"
+                  type="button"
+                  onClick={() => {
+                    setCreateModalOpen(false);
+                    setCreateError('');
+                  }}
+                  disabled={createMutation.isPending}
+                  className="px-4 py-3 border border-input rounded-lg font-semibold hover:bg-accent transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
