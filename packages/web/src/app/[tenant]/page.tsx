@@ -1,6 +1,7 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import Link from 'next/link';
+import { getServerSession } from 'next-auth';
+
+import { authOptions } from '@/lib/auth';
 
 export default async function TenantDashboard({
   params,

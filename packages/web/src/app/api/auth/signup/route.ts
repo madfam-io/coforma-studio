@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { signUpSchema } from '@coforma/types';
+import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import Link from 'next/link';
+import { useState } from 'react';
 
 export default function SignUpPage() {
   const router = useRouter();

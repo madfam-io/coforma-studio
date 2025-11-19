@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { slugSchema, hexColorSchema, emailSchema } from './common.schema';
 
 /**

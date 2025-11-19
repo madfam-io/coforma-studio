@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { slugSchema } from './common.schema';
 
 /**

@@ -1,6 +1,8 @@
 import { z } from 'zod';
-import { emailSchema } from './common.schema';
+
 import { TenantRole } from '../enums';
+
+import { emailSchema } from './common.schema';
 
 /**
  * User validation schemas
