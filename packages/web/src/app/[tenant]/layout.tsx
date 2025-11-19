@@ -1,7 +1,8 @@
-import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
+
 import { TenantNav } from '@/components/TenantNav';
+import { authOptions } from '@/lib/auth';
 
 export default async function TenantLayout({
   children,

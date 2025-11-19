@@ -1,6 +1,7 @@
 {
   "name": "coforma-studio",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "description": "Architecture as a Service for Customer Advisory Boards",
   "repository": {
@@ -36,12 +37,18 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.39.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-security": "^3.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "prettier": "^3.2.4",
     "turbo": "^2.6.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.0.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

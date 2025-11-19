@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+
 import { PrismaService } from '../../lib/prisma/prisma.service';
 
 @Controller('health')

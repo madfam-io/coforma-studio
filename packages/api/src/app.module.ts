@@ -4,8 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 // Core modules
 import { PrismaModule } from './lib/prisma/prisma.module';
-import { TrpcModule } from './trpc/trpc.module';
 import { HealthModule } from './modules/health/health.module';
+import { TrpcModule } from './trpc/trpc.module';
 
 @Module({
   imports: [
