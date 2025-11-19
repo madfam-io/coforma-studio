@@ -2,32 +2,49 @@
 
 Technical documentation for developers, operators, and stakeholders.
 
+## 📊 Project Status
+
+- **[Project Status](../PROJECT_STATUS.md)** - Current implementation status
+- **[Latest Audit](../COMPREHENSIVE_AUDIT_2025-11-19.md)** - Comprehensive audit (2025-11-19)
+- **[RLS Implementation](../RLS_IMPLEMENTATION_SUMMARY.md)** - Multi-tenant security details
+
 ## Contents
 
-### Architecture
-- [Database Schema](./database-schema.md) - Database tables, relationships, and RLS policies
-- [API Specification](./api-specification.md) - REST and tRPC endpoint documentation
-- [System Architecture](./system-architecture.md) - High-level system design
-- [Multi-Tenancy](./multi-tenancy.md) - Tenant isolation strategy
+### Architecture ✅ Available
+- **[Database Schema](./database-schema.md)** - Database tables, relationships, and RLS policies
+- **[API Specification](./api-specification.md)** - REST and tRPC endpoint documentation
 
-### Operations
-- [Deployment Guide](./deployment.md) - How to deploy to production
-- [Environment Setup](./environment-setup.md) - Local development environment
-- [Database Migrations](./database-migrations.md) - Migration workflow
-- [Monitoring](./monitoring.md) - Logging, error tracking, and alerts
+### Operations ✅ Available
+- **[Deployment Guide](./deployment.md)** - How to deploy to production
 
-### Security
-- [Security Policy](../SECURITY.md) - Security practices and vulnerability reporting
-- [RLS Testing Guide](./rls-testing.md) - Testing multi-tenant isolation
-- [Secrets Management](./secrets-management.md) - Managing API keys and credentials
+### Security ✅ Available
+- **[Security Policy](../SECURITY.md)** - Security practices and vulnerability reporting
+- **[RLS Implementation](../RLS_IMPLEMENTATION_SUMMARY.md)** - Multi-tenant isolation details
+- **[Testing Guide](../packages/api/test/README.md)** - How to test RLS and security
 
-### Development
-- [Contributing Guide](../CONTRIBUTING.md) - How to contribute to the project
-- [Code Style](./code-style.md) - Coding standards and best practices
-- [Testing Strategy](./testing-strategy.md) - Unit, integration, and E2E testing
+### Development ✅ Available
+- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
+- **[Testing Guide](../packages/api/test/README.md)** - Unit, integration, and RLS testing
+- **[README](../README.md)** - Quick start and setup
 
-### Business
-- [Product Vision](../PRODUCT_VISION.md) - Mission and vision
-- [Software Specification](../SOFTWARE_SPEC.md) - Functional requirements
-- [Operating Model](../OPERATING_MODEL.md) - Team structure and processes
-- [Business Development](../BIZ_DEV.md) - Go-to-market strategy
+### Business ✅ Available
+- **[Product Vision](../PRODUCT_VISION.md)** - Mission and vision
+- **[Software Specification](../SOFTWARE_SPEC.md)** - Functional requirements
+- **[Operating Model](../OPERATING_MODEL.md)** - Team structure and processes
+- **[Business Development](../BIZ_DEV.md)** - Go-to-market strategy
+- **[Technology Stack](../TECH_STACK.md)** - Technology decisions and rationale
+
+### 🚧 Coming Soon
+
+The following documents are referenced in planning but not yet created:
+- System Architecture - High-level system design diagrams
+- Multi-Tenancy Guide - Deep dive into tenant isolation
+- Environment Setup - Detailed local development guide
+- Database Migrations - Migration workflow and best practices
+- Monitoring - Logging, error tracking, and alerts setup
+- Secrets Management - Managing API keys and credentials
+- Code Style - Coding standards (see CONTRIBUTING.md for now)
+
+### 📁 Archive
+
+- **[Archived Docs](./archive/)** - Outdated documentation preserved for historical reference

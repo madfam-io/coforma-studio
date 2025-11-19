@@ -12,6 +12,8 @@ Coforma Studio is a **multi-tenant SaaS platform** designed to help companies cr
 
 Built with a **LATAM-first ethos** and designed for **global scalability**, Coforma Studio introduces a new category: **Advisory-as-a-Service (AaaS)**.
 
+**📊 Current Status:** Foundation Phase (40% Complete) - [View Project Status](./PROJECT_STATUS.md)
+
 ---
 
 ## Key Features
@@ -156,16 +158,28 @@ pnpm db:reset             # Reset database (WARNING: deletes all data)
 
 ## Documentation
 
+### Project Status & Reports
+- **[📊 Project Status](./PROJECT_STATUS.md)** - **Current status and progress** (Authoritative)
+- **[🔍 Latest Audit](./COMPREHENSIVE_AUDIT_2025-11-19.md)** - Comprehensive audit (2025-11-19)
+- **[🔐 RLS Implementation](./RLS_IMPLEMENTATION_SUMMARY.md)** - Multi-tenant security details
+
+### Product & Planning
 - **[Product Vision](./PRODUCT_VISION.md)** - Mission, vision, and guiding principles
 - **[Software Specification](./SOFTWARE_SPEC.md)** - Detailed technical requirements
 - **[Technology Stack](./TECH_STACK.md)** - Technology decisions and rationale
 - **[Operating Model](./OPERATING_MODEL.md)** - Team structure and processes
 - **[Business Development](./BIZ_DEV.md)** - Go-to-market strategy
+
+### Development
 - **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute
 - **[Security Policy](./SECURITY.md)** - Security practices and reporting
 - **[API Specification](./docs/api-specification.md)** - API documentation
 - **[Database Schema](./docs/database-schema.md)** - Database structure and RLS policies
 - **[Deployment Guide](./docs/deployment.md)** - Deployment procedures
+- **[Testing Guide](./packages/api/test/README.md)** - How to run and write tests
+
+### Archive
+- **[Historical Docs](./docs/archive/)** - Outdated documentation (preserved for reference)
 
 ---
 

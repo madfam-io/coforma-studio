@@ -2,10 +2,51 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 import { TrpcService } from './trpc.service';
+import { CABService } from '../modules/cab/cab.service';
+import {
+  createCABSchema,
+  updateCABSchema,
+  listCABsSchema,
+  getCABByIdSchema,
+  getCABBySlugSchema,
+  deleteCABSchema,
+} from '../modules/cab/dto/cab.dto';
+import { CABMemberService } from '../modules/cab-member/cab-member.service';
+import {
+  addMemberSchema,
+  updateMemberSchema,
+  listMembersSchema,
+  getMemberByIdSchema,
+  removeMemberSchema,
+  inviteMemberSchema,
+} from '../modules/cab-member/dto/cab-member.dto';
+import { SessionService } from '../modules/session/session.service';
+import {
+  createSessionSchema,
+  updateSessionSchema,
+  listSessionsSchema,
+  getSessionByIdSchema,
+  deleteSessionSchema,
+} from '../modules/session/dto/session.dto';
+import { SessionAttendeeService } from '../modules/session-attendee/session-attendee.service';
+import {
+  addAttendeeSchema,
+  bulkAddAttendeesSchema,
+  updateAttendeeSchema,
+  listAttendeesSchema,
+  getAttendeeByIdSchema,
+  removeAttendeeSchema,
+} from '../modules/session-attendee/dto/session-attendee.dto';
 
 @Injectable()
 export class TrpcRouter {
-  constructor(private readonly trpc: TrpcService) {}
+  constructor(
+    private readonly trpc: TrpcService,
+    private readonly cabService: CABService,
+    private readonly cabMemberService: CABMemberService,
+    private readonly sessionService: SessionService,
+    private readonly sessionAttendeeService: SessionAttendeeService,
+  ) {}
 
   appRouter = this.trpc.router({
     // Health check
@@ -89,32 +130,180 @@ export class TrpcRouter {
         }),
     }),
 
-    // CAB routes (placeholder - will expand)
+    // CAB routes - Full CRUD operations with tenant isolation
     cabs: this.trpc.router({
-      list: this.trpc.tenantProcedure.query(async ({ ctx }) => {
-        return ctx.prisma.cAB.findMany({
-          where: { tenantId: ctx.tenant.id },
-          orderBy: { createdAt: 'desc' },
-        });
-      }),
+      // List CABs with pagination and filtering
+      list: this.trpc.tenantProcedure
+        .input(listCABsSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findAll(ctx.tenant.id, input);
+        }),
 
+      // Get CAB by ID
+      getById: this.trpc.tenantProcedure
+        .input(getCABByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Get CAB by slug
+      getBySlug: this.trpc.tenantProcedure
+        .input(getCABBySlugSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabService.findBySlug(ctx.tenant.id, input.slug);
+        }),
+
+      // Create CAB
       create: this.trpc.tenantProcedure
-        .input(
-          z.object({
-            name: z.string().min(1).max(100),
-            description: z.string().optional(),
-            slug: z.string().min(1).max(50).regex(/^[a-z0-9-]+$/),
-            maxMembers: z.number().int().positive().optional(),
-            requiresNDA: z.boolean().default(false),
-          }),
-        )
+        .input(createCABSchema)
         .mutation(async ({ input, ctx }) => {
-          return ctx.prisma.cAB.create({
-            data: {
-              ...input,
-              tenantId: ctx.tenant.id,
-            },
-          });
+          return this.cabService.create(ctx.tenant.id, input);
+        }),
+
+      // Update CAB
+      update: this.trpc.tenantProcedure
+        .input(updateCABSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabService.update(ctx.tenant.id, input);
+        }),
+
+      // Delete CAB
+      delete: this.trpc.tenantProcedure
+        .input(deleteCABSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.cabService.delete(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // CAB Member routes - Full CRUD operations with tenant isolation
+    cabMembers: this.trpc.router({
+      // List members for a CAB
+      list: this.trpc.tenantProcedure
+        .input(listMembersSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabMemberService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get member by ID
+      getById: this.trpc.tenantProcedure
+        .input(getMemberByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabMemberService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Add existing user to CAB
+      add: this.trpc.tenantProcedure
+        .input(addMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.addMember(ctx.tenant.id, input);
+        }),
+
+      // Invite member to CAB (creates user if doesn't exist)
+      invite: this.trpc.tenantProcedure
+        .input(inviteMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.inviteMember(ctx.tenant.id, input);
+        }),
+
+      // Update member
+      update: this.trpc.tenantProcedure
+        .input(updateMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.update(ctx.tenant.id, input);
+        }),
+
+      // Remove member from CAB
+      remove: this.trpc.tenantProcedure
+        .input(removeMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.cabMemberService.remove(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // Session routes - Full CRUD operations with tenant isolation
+    sessions: this.trpc.router({
+      // List sessions for a CAB
+      list: this.trpc.tenantProcedure
+        .input(listSessionsSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get session by ID
+      getById: this.trpc.tenantProcedure
+        .input(getSessionByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Create session
+      create: this.trpc.tenantProcedure
+        .input(createSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionService.create(ctx.tenant.id, input);
+        }),
+
+      // Update session
+      update: this.trpc.tenantProcedure
+        .input(updateSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionService.update(ctx.tenant.id, input);
+        }),
+
+      // Delete session
+      delete: this.trpc.tenantProcedure
+        .input(deleteSessionSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.sessionService.delete(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // Session Attendee routes - Manage session invitations and attendance
+    sessionAttendees: this.trpc.router({
+      // List attendees for a session
+      list: this.trpc.tenantProcedure
+        .input(listAttendeesSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get attendee by ID
+      getById: this.trpc.tenantProcedure
+        .input(getAttendeeByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Add single attendee to session
+      add: this.trpc.tenantProcedure
+        .input(addAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.addAttendee(ctx.tenant.id, input);
+        }),
+
+      // Bulk add attendees to session
+      bulkAdd: this.trpc.tenantProcedure
+        .input(bulkAddAttendeesSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.bulkAddAttendees(ctx.tenant.id, input);
+        }),
+
+      // Update attendee (mark attendance, set join/leave times, talk time)
+      update: this.trpc.tenantProcedure
+        .input(updateAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.sessionAttendeeService.update(ctx.tenant.id, input);
+        }),
+
+      // Remove attendee from session
+      remove: this.trpc.tenantProcedure
+        .input(removeAttendeeSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.sessionAttendeeService.remove(ctx.tenant.id, input.id);
+          return { success: true };
         }),
     }),
   });
