@@ -1,11 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_FILTER } from '@nestjs/core';
 
 // Core modules
+import { LoggerModule } from './lib/logger/logger.module';
 import { PrismaModule } from './lib/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { TrpcModule } from './trpc/trpc.module';
+import { GlobalExceptionFilter } from './lib/errors/global-exception.filter';
+import { LoggerService } from './lib/logger/logger.service';
 
 @Module({
   imports: [
@@ -24,6 +28,7 @@ import { TrpcModule } from './trpc/trpc.module';
     ]),
 
     // Core modules
+    LoggerModule,
     PrismaModule,
     TrpcModule,
     HealthModule,
@@ -33,6 +38,13 @@ import { TrpcModule } from './trpc/trpc.module';
     // UserModule,
     // CABModule,
     // etc.
+  ],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useFactory: (logger: LoggerService) => new GlobalExceptionFilter(logger),
+      inject: [LoggerService],
+    },
   ],
 })
 export class AppModule {}

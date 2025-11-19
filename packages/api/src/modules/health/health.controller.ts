@@ -1,10 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
 
 import { PrismaService } from '../../lib/prisma/prisma.service';
+import { LoggerService } from '../../lib/logger/logger.service';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: LoggerService,
+  ) {}
 
   @Get()
   async check() {
@@ -16,7 +20,11 @@ export class HealthController {
       await this.prisma.$queryRaw`SELECT 1`;
     } catch (error) {
       databaseStatus = 'error';
-      console.error('Database health check failed:', error);
+      this.logger.error(
+        'Database health check failed',
+        error instanceof Error ? error.stack : undefined,
+        'HealthController'
+      );
     }
 
     return {

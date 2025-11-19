@@ -77,7 +77,10 @@ export const authOptions: NextAuthOptions = {
   events: {
     async signIn({ user, isNewUser }) {
       if (isNewUser) {
-        console.log(`🎉 New user signed up: ${user.email}`);
+        // Log new user signup (consider using a proper logger in production)
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`New user signed up: ${user.email}`);
+        }
       }
     },
   },
