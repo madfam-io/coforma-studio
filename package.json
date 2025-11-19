@@ -36,9 +36,9 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "eslint": "^8.56.0",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
+    "eslint": "^9.39.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "prettier": "^3.2.4",
     "turbo": "^2.6.1",
     "typescript": "^5.3.3"
