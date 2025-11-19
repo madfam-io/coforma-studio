@@ -11,12 +11,22 @@ import {
   getCABBySlugSchema,
   deleteCABSchema,
 } from '../modules/cab/dto/cab.dto';
+import { CABMemberService } from '../modules/cab-member/cab-member.service';
+import {
+  addMemberSchema,
+  updateMemberSchema,
+  listMembersSchema,
+  getMemberByIdSchema,
+  removeMemberSchema,
+  inviteMemberSchema,
+} from '../modules/cab-member/dto/cab-member.dto';
 
 @Injectable()
 export class TrpcRouter {
   constructor(
     private readonly trpc: TrpcService,
     private readonly cabService: CABService,
+    private readonly cabMemberService: CABMemberService,
   ) {}
 
   appRouter = this.trpc.router({
@@ -143,6 +153,52 @@ export class TrpcRouter {
         .input(deleteCABSchema)
         .mutation(async ({ input, ctx }) => {
           await this.cabService.delete(ctx.tenant.id, input.id);
+          return { success: true };
+        }),
+    }),
+
+    // CAB Member routes - Full CRUD operations with tenant isolation
+    cabMembers: this.trpc.router({
+      // List members for a CAB
+      list: this.trpc.tenantProcedure
+        .input(listMembersSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabMemberService.findAll(ctx.tenant.id, input);
+        }),
+
+      // Get member by ID
+      getById: this.trpc.tenantProcedure
+        .input(getMemberByIdSchema)
+        .query(async ({ input, ctx }) => {
+          return this.cabMemberService.findById(ctx.tenant.id, input.id);
+        }),
+
+      // Add existing user to CAB
+      add: this.trpc.tenantProcedure
+        .input(addMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.addMember(ctx.tenant.id, input);
+        }),
+
+      // Invite member to CAB (creates user if doesn't exist)
+      invite: this.trpc.tenantProcedure
+        .input(inviteMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.inviteMember(ctx.tenant.id, input);
+        }),
+
+      // Update member
+      update: this.trpc.tenantProcedure
+        .input(updateMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          return this.cabMemberService.update(ctx.tenant.id, input);
+        }),
+
+      // Remove member from CAB
+      remove: this.trpc.tenantProcedure
+        .input(removeMemberSchema)
+        .mutation(async ({ input, ctx }) => {
+          await this.cabMemberService.remove(ctx.tenant.id, input.id);
           return { success: true };
         }),
     }),

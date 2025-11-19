@@ -7,17 +7,43 @@ import { trpc } from '../../../../../lib/trpc';
 
 export default function CABMembersPage() {
   const params = useParams();
+  const utils = trpc.useUtils();
   const cabId = params.id as string;
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteForm, setInviteForm] = useState({
+    email: '',
+    name: '',
+    company: '',
+    title: '',
+  });
+  const [inviteError, setInviteError] = useState('');
 
   // Fetch CAB data
-  const { data: cab, isLoading } = trpc.cabs.getById.useQuery({ id: cabId });
+  const { data: cab, isLoading: cabLoading } = trpc.cabs.getById.useQuery({ id: cabId });
 
-  // TODO: Fetch members list
-  // const { data: members } = trpc.cabMembers.list.useQuery({ cabId });
+  // Fetch members list
+  const { data: membersData, isLoading: membersLoading } = trpc.cabMembers.list.useQuery({
+    cabId,
+    limit: 50,
+    offset: 0,
+  });
+
+  // Invite member mutation
+  const inviteMutation = trpc.cabMembers.invite.useMutation({
+    onSuccess: () => {
+      utils.cabMembers.list.invalidate({ cabId });
+      utils.cabs.getById.invalidate({ id: cabId });
+      setInviteModalOpen(false);
+      setInviteForm({ email: '', name: '', company: '', title: '' });
+      setInviteError('');
+    },
+    onError: (err) => {
+      setInviteError(err.message || 'Failed to invite member');
+    },
+  });
 
   // Loading state
-  if (isLoading) {
+  if (cabLoading || membersLoading) {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center py-16">
@@ -43,8 +69,8 @@ export default function CABMembersPage() {
     );
   }
 
-  // Placeholder members data
-  const members: any[] = [];
+  const members = membersData?.members || [];
+  const ndaSignedCount = members.filter((m) => m.ndaSigned).length;
 
   return (
     <div className="p-8">
@@ -83,7 +109,7 @@ export default function CABMembersPage() {
       {/* Member Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">{cab._count?.members || 0}</p>
+          <p className="text-2xl font-bold">{members.length}</p>
           <p className="text-sm text-muted-foreground">Total Members</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
@@ -95,7 +121,7 @@ export default function CABMembersPage() {
           <p className="text-sm text-muted-foreground">Member Limit</p>
         </div>
         <div className="bg-card border rounded-lg p-4">
-          <p className="text-2xl font-bold">0</p>
+          <p className="text-2xl font-bold">{ndaSignedCount}</p>
           <p className="text-sm text-muted-foreground">With NDA Signed</p>
         </div>
       </div>
@@ -127,15 +153,21 @@ export default function CABMembersPage() {
             <div key={member.id} className="p-6 flex items-center justify-between hover:bg-accent/50 transition">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-lg font-semibold text-primary">
-                    {member.name.charAt(0).toUpperCase()}
-                  </span>
+                  {member.user.avatar ? (
+                    <img src={member.user.avatar} alt={member.user.name || ''} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-lg font-semibold text-primary">
+                      {(member.user.name || member.user.email).charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div>
-                  <h3 className="font-semibold">{member.name}</h3>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
-                  {member.company && (
-                    <p className="text-sm text-muted-foreground">{member.company} • {member.title}</p>
+                  <h3 className="font-semibold">{member.user.name || member.user.email}</h3>
+                  <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                  {(member.company || member.title) && (
+                    <p className="text-sm text-muted-foreground">
+                      {member.company && member.title ? `${member.company} • ${member.title}` : member.company || member.title}
+                    </p>
                   )}
                 </div>
               </div>
@@ -146,7 +178,7 @@ export default function CABMembersPage() {
                     NDA Signed
                   </span>
                 )}
-                {member.tags?.map((tag: string) => (
+                {member.tags.map((tag: string) => (
                   <span key={tag} className="text-sm px-3 py-1 bg-muted text-muted-foreground rounded-full">
                     {tag}
                   </span>
@@ -162,14 +194,17 @@ export default function CABMembersPage() {
         </div>
       )}
 
-      {/* Invite Modal (Placeholder) */}
+      {/* Invite Modal */}
       {inviteModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border rounded-lg p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">Invite Members</h3>
+              <h3 className="text-xl font-semibold">Invite Member</h3>
               <button
-                onClick={() => setInviteModalOpen(false)}
+                onClick={() => {
+                  setInviteModalOpen(false);
+                  setInviteError('');
+                }}
                 className="p-2 hover:bg-accent rounded-lg transition"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,45 +213,97 @@ export default function CABMembersPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            {inviteError && (
+              <div className="mb-4 bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded">
+                <p className="text-sm">{inviteError}</p>
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setInviteError('');
+                inviteMutation.mutate({
+                  cabId,
+                  email: inviteForm.email,
+                  name: inviteForm.name,
+                  company: inviteForm.company || undefined,
+                  title: inviteForm.title || undefined,
+                });
+              }}
+              className="space-y-4"
+            >
               <div>
-                <label className="block text-sm font-medium mb-2">Email Address</label>
+                <label className="block text-sm font-medium mb-2">
+                  Email Address <span className="text-destructive">*</span>
+                </label>
                 <input
                   type="email"
+                  required
+                  value={inviteForm.email}
+                  onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                   placeholder="member@company.com"
                   className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Role (Optional)</label>
-                <select className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background">
-                  <option>MEMBER</option>
-                  <option>FACILITATOR</option>
-                </select>
+                <label className="block text-sm font-medium mb-2">
+                  Full Name <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={inviteForm.name}
+                  onChange={(e) => setInviteForm({ ...inviteForm, name: e.target.value })}
+                  placeholder="John Doe"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
               </div>
 
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Note:</strong> Member management functionality is under development. This is a UI placeholder to demonstrate the planned workflow.
-                </p>
+              <div>
+                <label className="block text-sm font-medium mb-2">Company (Optional)</label>
+                <input
+                  type="text"
+                  value={inviteForm.company}
+                  onChange={(e) => setInviteForm({ ...inviteForm, company: e.target.value })}
+                  placeholder="Acme Corp"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Title (Optional)</label>
+                <input
+                  type="text"
+                  value={inviteForm.title}
+                  onChange={(e) => setInviteForm({ ...inviteForm, title: e.target.value })}
+                  placeholder="Product Manager"
+                  className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                />
               </div>
 
               <div className="flex gap-3 pt-4">
                 <button
-                  disabled
-                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold opacity-50 cursor-not-allowed"
+                  type="submit"
+                  disabled={inviteMutation.isPending}
+                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50"
                 >
-                  Send Invitation
+                  {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
                 </button>
                 <button
-                  onClick={() => setInviteModalOpen(false)}
-                  className="px-4 py-3 border border-input rounded-lg font-semibold hover:bg-accent transition"
+                  type="button"
+                  onClick={() => {
+                    setInviteModalOpen(false);
+                    setInviteError('');
+                  }}
+                  disabled={inviteMutation.isPending}
+                  className="px-4 py-3 border border-input rounded-lg font-semibold hover:bg-accent transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
