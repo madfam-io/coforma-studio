@@ -28,7 +28,7 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Require manual production deploy acknowledgement
         if: github.event_name == 'workflow_dispatch'
