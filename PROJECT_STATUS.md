@@ -1,0 +1,66 @@
+# Coforma Studio — Project Status
+
+**Last Updated:** 2026-07-04
+**Current Phase:** Foundation
+**Production Ready:** No
+
+This file is the authoritative, evidence-based status of the repository. Every
+claim below is verifiable against the tree at the stated date. The previous
+status report (2025-11-19) is preserved at
+[docs/business/PROJECT_STATUS.md](./docs/business/PROJECT_STATUS.md).
+
+---
+
+## Quick Status (verified 2026-07-04)
+
+| Metric | Status |
+|--------|--------|
+| **Phase** | Foundation — core scaffolding in place, most product features not built |
+| **Codebase size** | 229 tracked files; ~127 TypeScript/TSX source files under `packages/` |
+| **Tests** | 12 test/spec files (API specs, RLS tenant-isolation, web route tests, smoke tests) |
+| **Auth** | Janua OIDC implemented (`packages/web/src/lib/auth.ts`); NextAuth reduced to a deprecated redirect stub |
+| **Billing** | `@madfam/billing` NestJS module wired via Janua client; no payment processor integrated (unused `stripe*` Prisma columns remain) |
+| **Deploy** | GitHub Actions → GHCR images (cosign-signed) → `infra/k8s/production/` manifests (web, api, admin) via Argo CD |
+| **Enclii** | `enclii.yaml` is **status-only** (feeds status.madfam.io); runtime/network onboarding onto the Enclii pipeline is pending |
+| **Production Ready** | No — features incomplete, foundation phase |
+
+---
+
+## What Verifiably Exists
+
+- **Monorepo:** Turborepo + pnpm workspaces: `packages/web` (Next.js 15),
+  `packages/api` (NestJS + Prisma), `packages/types`, `packages/ui`.
+- **Database:** PostgreSQL schema with Row-Level Security migrations for
+  tenant isolation (`packages/api/prisma/`).
+- **Auth:** Janua OIDC session handling (JWT via `jose`, `janua_session`
+  cookie), signin/signup/signout pages and callback route.
+- **Billing scaffolding:** subscription/tier/feature/usage guards from
+  `@madfam/billing/nestjs`, configured against `auth.madfam.io`.
+- **Integrations code:** PhyndCRM relay/webhook services, Tulana CAB event
+  webhook.
+- **Infra:** Kubernetes production manifests (deployments/services for web,
+  api, admin; network policies; kustomization with pinned image digests),
+  Argo CD config, CI (`ci.yml`) and gated build/deploy workflow
+  (`build-deploy.yml` requires a manual production acknowledgement).
+- **Local dev:** `docker-compose.yml` provides PostgreSQL 15, Redis 7,
+  Meilisearch v1.5.
+
+## What Does Not Exist Yet (despite older docs)
+
+- **No Vercel/Railway deployment.** `docs/deployment.md` still documents the
+  old Vercel/Railway runbooks; it is historical. The repo's own manifests and
+  workflows deploy to Kubernetes.
+- **No Stripe integration.** Only placeholder columns in the Prisma schema.
+  Dhanam is the mandated MADFAM billing platform; integration is roadmap.
+- **No full Enclii onboarding.** `enclii.yaml` intentionally contains only the
+  status-page declaration.
+- **Most product features** (recruitment CRM flows, engagement hub, roadmap
+  linkage, incentives, analytics dashboards) are not implemented.
+
+## Next Steps
+
+1. Complete Enclii runtime/network onboarding (replace status-only
+   `enclii.yaml`).
+2. Integrate Dhanam for billing; remove Stripe placeholder columns.
+3. Build out core CAB product features and expand the test suite.
+4. Retire or archive `docs/deployment.md` Vercel/Railway content.
