@@ -10,6 +10,12 @@ const nextConfig = {
   // Skip tRPC v10 / React Query type collision errors during build
   typescript: { ignoreBuildErrors: true },
 
+  // Lint is enforced by the dedicated CI lint job (`pnpm lint`), not the
+  // image build. Before the root `@eslint/js` devDependency was added the
+  // flat config failed to load and `next build` silently skipped linting;
+  // this keeps that behavior explicit instead of accidental.
+  eslint: { ignoreDuringBuilds: true },
+
   // Transpile workspace packages
   transpilePackages: ['@coforma/types', '@coforma/ui'],
 
