@@ -109,7 +109,7 @@ jobs:
         # and the audience is pinned to `sigstore` (tulana deploy-api.yml
         # canonical pattern).
         id: sigstore-token
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const token = await core.getIDToken('sigstore')
