@@ -26,7 +26,7 @@ export class TrpcService {
   router = this.trpc.router;
   middleware = this.trpc.middleware;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor() {}
 
   /**
    * Protected procedure - requires authentication
@@ -52,6 +52,16 @@ export class TrpcService {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Tenant context required',
+        });
+      }
+
+      // Re-assert authentication locally: the narrowing from
+      // protectedProcedure does not survive tRPC's ctx threading, and an
+      // auth middleware should be provable without trusting upstream types.
+      if (!ctx.session?.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to access this resource',
         });
       }
 

@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PhyndCrmRelayService } from '../../integrations/phyndcrm/phyndcrm-relay.service';
-import { PrismaService } from '../../lib/prisma/prisma.service';
-import { LoggerService } from '../../lib/logger/logger.service';
 import {
   TenantContextMissingException,
   RecordNotFoundException,
@@ -11,6 +9,9 @@ import {
   DatabaseException,
   ValidationException,
 } from '../../lib/errors';
+import { LoggerService } from '../../lib/logger/logger.service';
+import { PrismaService } from '../../lib/prisma/prisma.service';
+
 import {
   AddMemberInput,
   UpdateMemberInput,
@@ -323,7 +324,9 @@ export class CABMemberService {
       }
 
       // Build update data (only include defined fields)
-      const updateData: Prisma.CABMembershipUpdateInput = {};
+      // Unchecked variant: this block sets the discountPlanId FK scalar directly,
+      // which the checked UpdateInput deliberately omits in favour of relation ops.
+      const updateData: Prisma.CABMembershipUncheckedUpdateInput = {};
       if (data.company !== undefined) updateData.company = data.company;
       if (data.title !== undefined) updateData.title = data.title;
       if (data.tags !== undefined) updateData.tags = data.tags;

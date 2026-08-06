@@ -29,7 +29,6 @@ export default function CABDetailPage() {
     onSuccess: () => {
       utils.cabs.getById.invalidate({ id: cabId });
       utils.cabs.list.invalidate();
-      setIsEditing(false);
     },
   });
 

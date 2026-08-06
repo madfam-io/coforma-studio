@@ -24,6 +24,15 @@ export default tseslint.config(
       '**/coverage/**',
       '**/*.config.js',
       '**/*.config.ts',
+      // Typed linting needs tsconfig coverage; specs and __tests__ are
+      // excluded from packages/api/tsconfig.json, so the typed parser can
+      // only error on them ("parserOptions.project has been provided").
+      '**/*.spec.ts',
+      '**/__tests__/**',
+      // packages/api/test is likewise outside tsconfig's include set.
+      'packages/api/test/**',
+      // Quarantined: imports a never-published SDK. See its README.
+      'packages/api/src/modules/billing/**',
     ],
   },
 
