@@ -128,8 +128,9 @@ export class TulanaCabEventWebhookService {
     const weights: number[] = [];
 
     for (const answer of input.answers) {
-      if (answer.type === 'radio' && answer.value && answer.value in sentimentMap) {
-        weights.push(sentimentMap[answer.value]);
+      const sentiment = answer.value ? sentimentMap[answer.value] : undefined;
+      if (answer.type === 'radio' && sentiment !== undefined) {
+        weights.push(sentiment);
       } else if (answer.type === 'text' && answer.value && answer.value.trim().length > 0) {
         // v0.1 stub: text answers contribute neutral until NLP lands.
         weights.push(NEUTRAL_SENTIMENT);

@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { SessionStatus } from '@prisma/client';
+import { z } from 'zod';
 
 /**
  * DTO schemas for session operations

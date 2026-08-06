@@ -1,3 +1,6 @@
+// Sentry must be imported and initialized before any other module so its
+// instrumentation hooks land first — hence out of alphabetical order.
+// eslint-disable-next-line import/order
 import * as Sentry from '@sentry/node';
 
 const sentryDsn = process.env.SENTRY_DSN;
@@ -69,4 +72,4 @@ async function bootstrap() {
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
-bootstrap();
+void bootstrap();

@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { PrismaService } from '../../lib/prisma/prisma.service';
-import { LoggerService } from '../../lib/logger/logger.service';
 import {
   TenantContextMissingException,
   RecordNotFoundException,
   DuplicateRecordException,
   DatabaseException,
 } from '../../lib/errors';
+import { LoggerService } from '../../lib/logger/logger.service';
+import { PrismaService } from '../../lib/prisma/prisma.service';
+
 import {
   CreateCABInput,
   UpdateCABInput,

@@ -1,17 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_FILTER } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Core modules
+import { PhyndCrmModule } from './integrations/phyndcrm/phyndcrm.module';
+import { GlobalExceptionFilter } from './lib/errors/global-exception.filter';
 import { LoggerModule } from './lib/logger/logger.module';
+import { LoggerService } from './lib/logger/logger.service';
 import { PrismaModule } from './lib/prisma/prisma.module';
 import { HealthModule } from './modules/health/health.module';
 import { TrpcModule } from './trpc/trpc.module';
-import { BillingModule } from './modules/billing/billing.module';
-import { PhyndCrmModule } from './integrations/phyndcrm/phyndcrm.module';
-import { GlobalExceptionFilter } from './lib/errors/global-exception.filter';
-import { LoggerService } from './lib/logger/logger.service';
 
 @Module({
   imports: [
@@ -34,7 +33,6 @@ import { LoggerService } from './lib/logger/logger.service';
     PrismaModule,
     TrpcModule,
     HealthModule,
-    BillingModule,
 
     // Ecosystem integrations
     PhyndCrmModule,
