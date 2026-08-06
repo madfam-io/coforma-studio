@@ -9,7 +9,7 @@ type StatusFilter = 'all' | 'OPEN' | 'UNDER_REVIEW' | 'PLANNED' | 'IN_PROGRESS' 
 
 export default function FeedbackPage() {
   const params = useParams();
-  const [feedback, setFeedback] = useState([]);
+  const [feedback] = useState([]);
   const [typeFilter, setTypeFilter] = useState<FeedbackFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 

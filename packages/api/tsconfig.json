@@ -2,13 +2,19 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "commonjs",
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@coforma/types": ["../types/src"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@coforma/types": [
+        "../types/src"
+      ]
     },
     "outDir": "./dist",
     "rootDir": "./src",
@@ -17,7 +23,8 @@
     "declaration": true,
     "sourceMap": true,
     "removeComments": true,
-    "incremental": true
+    "incremental": true,
+    "noEmit": false
   },
   "include": [
     "src/**/*"
@@ -26,6 +33,7 @@
     "node_modules",
     "dist",
     "test",
-    "**/*spec.ts"
+    "**/*spec.ts",
+    "src/modules/billing"
   ]
 }

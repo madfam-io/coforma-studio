@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 export default function SessionsPage() {
   const params = useParams();
-  const [sessions, setSessions] = useState([]);
+  const [sessions] = useState([]);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all');
 
   return (
