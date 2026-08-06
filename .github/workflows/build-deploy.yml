@@ -77,25 +77,100 @@ jobs:
             ghcr.io/madfam-org/coforma-studio/web:${{ github.sha }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+          # provenance/sbom off to avoid GHCR 403s and attestation-manifest
+          # digest ambiguity (https://github.com/docker/build-push-action/issues/981)
+          provenance: false
+          sbom: false
+
+      - name: Preflight sigstore connectivity
+        # Canonical pattern from tulana/.github/workflows/deploy-api.yml:
+        # probe every sigstore endpoint first so a runner-egress problem
+        # names itself instead of surfacing as cosign's opaque JSON parse
+        # error ("invalid character 'u' looking for beginning of value").
+        run: |
+          set -euo pipefail
+          FAILED=0
+          for HOST in oauth2.sigstore.dev fulcio.sigstore.dev rekor.sigstore.dev tuf-repo-cdn.sigstore.dev; do
+            if curl -sS --max-time 10 -o /dev/null "https://${HOST}"; then
+              echo "ok: ${HOST}"
+            else
+              echo "UNREACHABLE: ${HOST}" >&2
+              FAILED=1
+            fi
+          done
+          if [ "${FAILED}" -ne 0 ]; then
+            echo "::error::sigstore endpoints unreachable from this runner — fix runner egress before retrying."
+            exit 1
+          fi
+
+      - name: Mint sigstore OIDC identity token
+        # Mint the token explicitly instead of relying on cosign's ambient
+        # fetch: a failure surfaces the Actions service's real error message
+        # and the audience is pinned to `sigstore` (tulana deploy-api.yml
+        # canonical pattern).
+        id: sigstore-token
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('sigstore')
+            core.setSecret(token)
+            core.setOutput('token', token)
 
       - name: Sign image with cosign
         env:
-          COSIGN_EXPERIMENTAL: "true"
+          SIGSTORE_ID_TOKEN: ${{ steps.sigstore-token.outputs.token }}
         run: |
-          cosign sign --yes ghcr.io/madfam-org/coforma-studio/web@${{ steps.build-web.outputs.digest }}
+          cosign sign --yes --identity-token "${SIGSTORE_ID_TOKEN}" \
+            ghcr.io/madfam-org/coforma-studio/web@${{ steps.build-web.outputs.digest }}
+
+      - name: Resolve manifest digest
+        id: digest
+        run: |
+          set -euo pipefail
+          # `docker buildx imagetools inspect` returns the manifest-list
+          # digest for multi-arch images; build-push-action's output digest
+          # is only safe for single-arch builds (see enclii#136 / hcm-api).
+          DIGEST=$(docker buildx imagetools inspect \
+            "ghcr.io/madfam-org/coforma-studio/web:${{ github.sha }}" \
+            | awk '/^Digest:/{print $2; exit}')
+          if [ -z "$DIGEST" ]; then
+            echo "Failed to resolve digest" >&2
+            exit 1
+          fi
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "Resolved digest: ${DIGEST}"
 
       - name: Install kustomize
         uses: imranismail/setup-kustomize@v3
 
-      - name: Update web image digest
-        working-directory: infra/k8s/production
+      - name: Commit image digest to GitOps manifest
+        # Atomic commit-with-retry (canonical tulana pattern): fetch latest
+        # main, set digest, push. Handles races against concurrent sessions
+        # committing to the same kustomization file.
         run: |
-          kustomize edit set image ghcr.io/madfam-org/coforma-studio/web=ghcr.io/madfam-org/coforma-studio/web@${{ steps.build-web.outputs.digest }}
-
-      - name: Commit updated manifests
-        run: |
+          set -euo pipefail
+          DIGEST="${{ steps.digest.outputs.digest }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add infra/k8s/production/kustomization.yaml
-          git diff --staged --quiet || git commit -m "ci: update image digests [skip ci]"
-          git push
+          for ATTEMPT in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+            cd infra/k8s/production
+            kustomize edit set image \
+              ghcr.io/madfam-org/coforma-studio/web=ghcr.io/madfam-org/coforma-studio/web@${DIGEST}
+            cd ../../..
+            git add infra/k8s/production/kustomization.yaml
+            if git diff --staged --quiet; then
+              echo "No digest change — manifest already pinned to ${DIGEST}"
+              exit 0
+            fi
+            git commit -m "deploy(web): pin digest ${DIGEST:7:19} [skip ci]" -m "build-source-sha: ${GITHUB_SHA}"
+            if git push origin main; then
+              echo "Pushed digest update on attempt $ATTEMPT"
+              exit 0
+            fi
+            echo "Push failed on attempt $ATTEMPT, retrying after backoff..."
+            sleep $((ATTEMPT * 10))
+          done
+          echo "Failed to commit digest after 3 attempts" >&2
+          exit 1
