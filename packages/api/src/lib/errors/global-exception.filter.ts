@@ -5,11 +5,20 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
 import { Prisma } from '@prisma/client';
+import { Request, Response } from 'express';
+
+import { LoggerService } from '../logger/logger.service';
+
+/** Request as it reaches the filter: auth/tenant middleware may have decorated it. */
+type RequestWithCtx = Request & {
+  user?: { id?: string };
+  tenant?: { id?: string };
+};
+
 import { ApplicationException } from './application.exception';
 import { ErrorCode, ErrorSeverity } from './error-codes';
-import { LoggerService } from '../logger/logger.service';
+
 
 interface ErrorResponse {
   code: string;
@@ -31,7 +40,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest();
+    const request = ctx.getRequest<RequestWithCtx>();
 
     const errorResponse = this.buildErrorResponse(exception, request.url);
     const statusCode = this.getHttpStatus(exception);
@@ -62,10 +71,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Handle standard HttpException
     if (exception instanceof HttpException) {
       const exceptionResponse = exception.getResponse();
-      const message =
+      // class-validator puts an array of messages here; join for the wire.
+      const raw =
         typeof exceptionResponse === 'string'
           ? exceptionResponse
-          : (exceptionResponse as any).message || exception.message;
+          : ((exceptionResponse as { message?: string | string[] }).message ??
+             exception.message);
+      const message = Array.isArray(raw) ? raw.join('; ') : raw;
 
       return {
         code: this.mapHttpStatusToErrorCode(exception.getStatus()),
@@ -107,7 +119,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     path: string,
     isDevelopment: boolean
   ): ErrorResponse {
-    const meta = exception.meta as Record<string, any> | undefined;
+    const meta = exception.meta;
 
     switch (exception.code) {
       case 'P2002': // Unique constraint violation
@@ -176,7 +188,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     return HttpStatus.INTERNAL_SERVER_ERROR;
   }
 
-  private mapHttpStatusToErrorCode(status: number): ErrorCode {
+  private mapHttpStatusToErrorCode(status: HttpStatus): ErrorCode {
     switch (status) {
       case HttpStatus.UNAUTHORIZED:
         return ErrorCode.UNAUTHORIZED;
@@ -200,7 +212,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private logError(
     exception: unknown,
     errorResponse: ErrorResponse,
-    request: any
+    request: RequestWithCtx
   ): void {
     const logContext = {
       path: request.url,

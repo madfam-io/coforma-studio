@@ -357,7 +357,7 @@ export default function CoformaStudioDemo() {
             {/* Upcoming Session */}
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Next Session</h3>
-              <SessionCard session={DEMO_SESSIONS[0]} />
+              {DEMO_SESSIONS[0] && <SessionCard session={DEMO_SESSIONS[0]} />}
             </div>
           </div>
         )}

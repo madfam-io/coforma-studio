@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 
-import { PrismaService } from '../../lib/prisma/prisma.service';
 import { LoggerService } from '../../lib/logger/logger.service';
+import { PrismaService } from '../../lib/prisma/prisma.service';
 
 @Controller('health')
 export class HealthController {
