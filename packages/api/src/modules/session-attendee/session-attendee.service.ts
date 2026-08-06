@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
-import { PrismaService } from '../../lib/prisma/prisma.service';
-import { LoggerService } from '../../lib/logger/logger.service';
 import {
   TenantContextMissingException,
   RecordNotFoundException,
@@ -10,6 +8,9 @@ import {
   DatabaseException,
   ValidationException,
 } from '../../lib/errors';
+import { LoggerService } from '../../lib/logger/logger.service';
+import { PrismaService } from '../../lib/prisma/prisma.service';
+
 import {
   AddAttendeeInput,
   BulkAddAttendeesInput,
@@ -178,7 +179,7 @@ export class SessionAttendeeService {
       if (users.length !== newUserIds.length) {
         const foundUserIds = new Set(users.map((u) => u.id));
         const missingUserIds = newUserIds.filter((id) => !foundUserIds.has(id));
-        throw new RecordNotFoundException('User', missingUserIds[0]);
+        throw new RecordNotFoundException('User', missingUserIds[0] ?? newUserIds[0] ?? 'unknown');
       }
 
       // Bulk create attendees

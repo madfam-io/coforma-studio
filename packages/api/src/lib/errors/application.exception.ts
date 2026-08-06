@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+
 import { ErrorCode, ErrorSeverity } from './error-codes';
 
 export interface ApplicationErrorDetails {

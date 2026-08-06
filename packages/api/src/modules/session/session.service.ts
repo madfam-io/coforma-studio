@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, SessionStatus } from '@prisma/client';
 
-import { PrismaService } from '../../lib/prisma/prisma.service';
-import { LoggerService } from '../../lib/logger/logger.service';
 import {
   TenantContextMissingException,
   RecordNotFoundException,
   DatabaseException,
   ValidationException,
 } from '../../lib/errors';
+import { LoggerService } from '../../lib/logger/logger.service';
+import { PrismaService } from '../../lib/prisma/prisma.service';
+
 import {
   CreateSessionInput,
   UpdateSessionInput,
@@ -64,7 +65,7 @@ export class SessionService {
           scheduledAt: new Date(data.scheduledAt),
           duration: data.duration,
           meetingLink: data.meetingLink || null,
-          agendaItems: data.agendaItems || null,
+          agendaItems: data.agendaItems ?? Prisma.JsonNull,
           status: SessionStatus.SCHEDULED,
         },
         include: {
@@ -158,7 +159,8 @@ export class SessionService {
       if (data.endedAt !== undefined) updateData.endedAt = data.endedAt ? new Date(data.endedAt) : null;
       if (data.meetingLink !== undefined) updateData.meetingLink = data.meetingLink;
       if (data.recordingUrl !== undefined) updateData.recordingUrl = data.recordingUrl;
-      if (data.agendaItems !== undefined) updateData.agendaItems = data.agendaItems;
+      if (data.agendaItems !== undefined)
+        updateData.agendaItems = data.agendaItems ?? Prisma.JsonNull;
 
       // Update session
       const session = await this.prisma.session.update({

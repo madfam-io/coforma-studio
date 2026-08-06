@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common';
+
 import { ApplicationException } from './application.exception';
 import { ErrorCode, ErrorSeverity } from './error-codes';
 

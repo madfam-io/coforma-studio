@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { SessionAttendeeService } from './session-attendee.service';
 
 @Module({

@@ -23,8 +23,9 @@ export default async function TenantLayout({
 
   if (!tenantMembership) {
     // User doesn't have access to this tenant
-    if (session.user.tenants.length > 0) {
-      redirect(`/${session.user.tenants[0].slug}`);
+    const firstTenant = session.user.tenants[0];
+    if (firstTenant) {
+      redirect(`/${firstTenant.slug}`);
     }
     redirect('/auth/signin');
   }
