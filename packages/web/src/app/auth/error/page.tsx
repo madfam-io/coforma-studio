@@ -41,7 +41,11 @@ const errorMessages: Record<string, { title: string; description: string }> = {
 export default function AuthErrorPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error') || 'Default';
-  const errorInfo = errorMessages[error] || errorMessages.Default;
+  const errorInfo = errorMessages[error] ??
+    errorMessages.Default ?? {
+      title: 'Authentication error',
+      description: 'Something went wrong during sign-in. Please try again.',
+    };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

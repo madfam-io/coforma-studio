@@ -15,9 +15,10 @@
  * duplicates downstream.
  */
 
+import * as crypto from 'crypto';
+
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
 
 import { LoggerService } from '../../lib/logger/logger.service';
 

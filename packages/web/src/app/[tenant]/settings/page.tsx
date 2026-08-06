@@ -1,10 +1,8 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useState } from 'react';
 
 export default function SettingsPage() {
-  const params = useParams();
   const [formData, setFormData] = useState({
     name: '',
     logo: '',

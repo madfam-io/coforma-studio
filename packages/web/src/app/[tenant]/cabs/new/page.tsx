@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
-import { trpc } from '../../../lib/trpc';
+import { trpc } from '@/lib/trpc';
 
 export default function NewCABPage() {
   const router = useRouter();
@@ -25,8 +25,8 @@ export default function NewCABPage() {
       // Navigate to CABs list
       router.push(`/${params.tenant}/cabs`);
     },
-    onError: (err) => {
-      setError(err.message || 'Failed to create CAB');
+    onError: (err: { message?: string }) => {
+      setError(err.message ?? 'Failed to create CAB');
     },
   });
 

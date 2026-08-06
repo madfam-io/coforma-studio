@@ -61,9 +61,10 @@ export async function middleware(request: NextRequest) {
 
       if (!hasTenantAccess) {
         // Redirect to first available tenant or sign-in
-        if (userTenants.length > 0) {
+        const firstTenant = userTenants[0];
+        if (firstTenant) {
           return NextResponse.redirect(
-            new URL(`/${userTenants[0].slug}`, request.url)
+            new URL(`/${firstTenant.slug}`, request.url)
           );
         }
         return NextResponse.redirect(new URL('/auth/signin', request.url));
