@@ -143,8 +143,9 @@ export async function GET(request: NextRequest) {
     let redirectTo = '/';
     if (state && state.startsWith('/')) {
       redirectTo = state;
-    } else if (tenants.length > 0) {
-      redirectTo = `/${tenants[0].slug}`;
+    } else {
+      const firstTenant = tenants[0];
+      if (firstTenant) redirectTo = `/${firstTenant.slug}`;
     }
 
     const response = NextResponse.redirect(new URL(redirectTo, request.url));

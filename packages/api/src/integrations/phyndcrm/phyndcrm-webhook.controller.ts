@@ -11,6 +11,7 @@ import { Body, Controller, Headers, HttpCode, HttpStatus, Post, Req, Unauthorize
 import type { Request } from 'express';
 
 import { LoggerService } from '../../lib/logger/logger.service';
+
 import { PhyndCrmEvent, PhyndCrmWebhookService } from './phyndcrm-webhook.service';
 
 @Controller('api/v1/webhooks/phyndcrm')

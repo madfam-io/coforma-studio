@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
-import { TrpcService } from './trpc.service';
 import { CABService } from '../modules/cab/cab.service';
 import {
   createCABSchema,
@@ -20,7 +19,6 @@ import {
   removeMemberSchema,
   inviteMemberSchema,
 } from '../modules/cab-member/dto/cab-member.dto';
-import { SessionService } from '../modules/session/session.service';
 import {
   createSessionSchema,
   updateSessionSchema,
@@ -28,7 +26,7 @@ import {
   getSessionByIdSchema,
   deleteSessionSchema,
 } from '../modules/session/dto/session.dto';
-import { SessionAttendeeService } from '../modules/session-attendee/session-attendee.service';
+import { SessionService } from '../modules/session/session.service';
 import {
   addAttendeeSchema,
   bulkAddAttendeesSchema,
@@ -37,6 +35,9 @@ import {
   getAttendeeByIdSchema,
   removeAttendeeSchema,
 } from '../modules/session-attendee/dto/session-attendee.dto';
+import { SessionAttendeeService } from '../modules/session-attendee/session-attendee.service';
+
+import { TrpcService } from './trpc.service';
 
 @Injectable()
 export class TrpcRouter {
@@ -46,9 +47,18 @@ export class TrpcRouter {
     private readonly cabMemberService: CABMemberService,
     private readonly sessionService: SessionService,
     private readonly sessionAttendeeService: SessionAttendeeService,
-  ) {}
+  ) {
+    // Assigned in the constructor, not as a field initializer: under ES2022
+    // class-field semantics, initializers run BEFORE constructor parameter
+    // properties are assigned, so `this.trpc` here was TS2729 x35 (and would
+    // be undefined at runtime once the target actually flipped).
+    this.appRouter = this.buildRouter();
+  }
 
-  appRouter = this.trpc.router({
+  appRouter!: ReturnType<TrpcRouter['buildRouter']>;
+
+  private buildRouter() {
+    return this.trpc.router({
     // Health check
     health: this.trpc.procedure.query(() => {
       return {
@@ -307,10 +317,16 @@ export class TrpcRouter {
         }),
     }),
   });
+  }
 
   get type() {
     return this.appRouter;
   }
 }
 
-export type AppRouter = TrpcRouter['appRouter'];
+// Derived via the `type` getter, NOT the appRouter field: the field's type is
+// ReturnType<TrpcRouter['buildRouter']>, and declaration emit ERASES private
+// member types — in the built d.ts that collapses to `any`, which makes
+// createTRPCReact<AppRouter> degrade every call site to its reserved-key
+// guard union. The getter's return type is inferred and inlined in full.
+export type AppRouter = TrpcRouter['type'];
