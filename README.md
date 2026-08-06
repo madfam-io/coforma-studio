@@ -32,14 +32,18 @@ Built with a **LATAM-first ethos** and designed for **global scalability**, Cofo
 
 ## Architecture
 
-* **Frontend:** Next.js (React + TailwindCSS) on **Vercel**.
-* **Backend/API:** Node.js (NestJS) on **Railway**.
-* **Database:** PostgreSQL (RLS enforced multi-tenancy) on **Railway**.
-* **Cache/Queue:** Redis (Railway) with BullMQ for background jobs.
-* **Search:** Meilisearch (Railway).
-* **Storage & CDN:** Cloudflare R2 + Cloudflare CDN for file storage and delivery.
-* **Integrations:** Zoom, Slack, Jira, Asana, ClickUp, HubSpot, Stripe.
-* **Authentication:** NextAuth.js (OAuth2.0, OIDC, SSO).
+> Updated 2026-07-04 to match what this repository actually contains (its manifests and code) and MADFAM platform mandates. An earlier version of this section described a NextAuth/Stripe/Vercel/Railway stack that does not match the repo's own deploy manifests; that material is preserved in the historical planning docs (see [docs/archive/](./docs/archive/) and [docs/deployment.md](./docs/deployment.md), which still documents the old Vercel/Railway runbooks).
+
+* **Monorepo:** Turborepo + pnpm workspaces (`packages/web`, `packages/api`, `packages/types`, `packages/ui`).
+* **Frontend:** Next.js 15 (App Router, React, Tailwind CSS).
+* **Backend/API:** NestJS (Node.js) with Prisma ORM.
+* **Database:** PostgreSQL with Row-Level Security (RLS) enforced multi-tenancy.
+* **Cache/Queue:** Redis with BullMQ for background jobs (local dev via `docker-compose.yml`).
+* **Search:** Meilisearch (local dev via `docker-compose.yml`).
+* **Authentication:** **Janua** (MADFAM's identity platform, `auth.madfam.io`) via OIDC — implemented in `packages/web/src/lib/auth.ts`. The former NextAuth.js route survives only as a deprecated redirect stub.
+* **Billing:** `@madfam/billing` NestJS module backed by the Janua client (subscription/tier/feature/usage guards). **Dhanam** is MADFAM's mandated billing platform; no payment-processor integration is implemented yet — the Prisma schema retains unused `stripe*` placeholder columns only.
+* **Deployment:** Container images built by GitHub Actions, pushed to GHCR and cosign-signed; Kubernetes manifests in `infra/k8s/production/` (web, api, admin) reconciled via Argo CD. Onboarding onto **Enclii**, MADFAM's deployment platform, is in progress — `enclii.yaml` is currently a status-only declaration for status.madfam.io. **Not** deployed on Vercel or Railway.
+* **Integrations (roadmap):** Zoom, Slack, Jira, Asana, ClickUp, HubSpot.
 
 ---
 
@@ -177,16 +181,16 @@ pnpm db:reset             # Reset database (WARNING: deletes all data)
 ## Documentation
 
 ### Project Status & Reports
-- **[📊 Project Status](./PROJECT_STATUS.md)** - **Current status and progress** (Authoritative)
-- **[🔍 Latest Audit](./COMPREHENSIVE_AUDIT_2025-11-19.md)** - Comprehensive audit (2025-11-19)
-- **[🔐 RLS Implementation](./RLS_IMPLEMENTATION_SUMMARY.md)** - Multi-tenant security details
+- **[📊 Project Status](./PROJECT_STATUS.md)** - **Current status and progress** (Authoritative, updated 2026-07-04)
+- **[🔍 Latest Audit](./docs/reports/COMPREHENSIVE_AUDIT_2025-11-19.md)** - Comprehensive audit (2025-11-19)
+- **[🔐 RLS Implementation](./docs/architecture/RLS_IMPLEMENTATION_SUMMARY.md)** - Multi-tenant security details
 
 ### Product & Planning
-- **[Product Vision](./PRODUCT_VISION.md)** - Mission, vision, and guiding principles
-- **[Software Specification](./SOFTWARE_SPEC.md)** - Detailed technical requirements
-- **[Technology Stack](./TECH_STACK.md)** - Technology decisions and rationale
-- **[Operating Model](./OPERATING_MODEL.md)** - Team structure and processes
-- **[Business Development](./BIZ_DEV.md)** - Go-to-market strategy
+- **[Product Vision](./docs/business/PRODUCT_VISION.md)** - Mission, vision, and guiding principles
+- **[Software Specification](./docs/architecture/SOFTWARE_SPEC.md)** - Detailed technical requirements
+- **[Technology Stack](./docs/architecture/TECH_STACK.md)** - Technology decisions and rationale
+- **[Operating Model](./docs/business/OPERATING_MODEL.md)** - Team structure and processes
+- **[Business Development](./docs/business/BIZ_DEV.md)** - Go-to-market strategy
 
 ### Development
 - **[Contributing Guide](./CONTRIBUTING.md)** - How to contribute
