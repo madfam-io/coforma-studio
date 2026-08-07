@@ -17,8 +17,8 @@
  *        without `phyndcrmTenantId` → warn + skip.
  */
 
-import { NextResponse } from 'next/server';
 import { PrismaClient, MembershipExitStatus } from '@prisma/client';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireTenantRole } from '@/lib/auth-helpers';
@@ -29,7 +29,7 @@ const prisma = new PrismaClient();
 /** Duck-type narrow for Prisma known-error envelope (see members/route.ts). */
 function prismaErrorCode(err: unknown): string | null {
   if (typeof err === 'object' && err !== null && 'code' in err) {
-    const c = (err as { code: unknown }).code;
+    const c = (err).code;
     return typeof c === 'string' ? c : null;
   }
   return null;

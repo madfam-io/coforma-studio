@@ -12,8 +12,9 @@
  */
 
 import * as crypto from 'crypto';
-import { NextResponse } from 'next/server';
+
 import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 

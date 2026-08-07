@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
 import { PrismaClient } from '@prisma/client';
+import { jwtVerify } from 'jose';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
@@ -89,7 +89,7 @@ export async function getSession(): Promise<AppSession | null> {
       name: m.tenant.name,
       logo: m.tenant.logo,
       brandColor: m.tenant.brandColor,
-      role: m.role as 'ADMIN' | 'FACILITATOR' | 'MEMBER',
+      role: m.role,
     }));
 
     return {
