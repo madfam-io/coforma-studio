@@ -186,10 +186,12 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
+        # No `credentials:` here. postgres:15 is a public official image, these
+        # jobs run on GitHub-hosted runners (public repo), and a credentials block
+        # whose secrets resolve to '' — which is exactly what Dependabot PRs get —
+        # makes the whole workflow TEMPLATE INVALID, so the job cannot start at all.
+        # That silently blocked every Dependabot PR on this repo.
         image: postgres:15
-        credentials:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -203,10 +205,7 @@ jobs:
           - 5432:5432
 
       redis:
-        image: redis:7
-        credentials:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        image: redis:7   # public official image; see the note above re: Dependabot
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 10s
