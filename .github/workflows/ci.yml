@@ -258,12 +258,21 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    # Uploading a SARIF file needs security-events: write. This repo's default
+    # GITHUB_TOKEN permission is read-only, which is why the upload failed with
+    # the very unhelpful "Resource not accessible by integration". Granting it
+    # per job keeps the default read-only everywhere else.
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        # Pinned to a release tag rather than @master: @master silently changes
+        # under us, which is a poor property for a security job in particular.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -271,6 +280,8 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        # v2 is retired and fails the job outright: "CodeQL Action major
+        # versions v1 and v2 have been deprecated."
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
