@@ -24,6 +24,16 @@
     "sourceMap": true,
     "removeComments": true,
     "incremental": true,
+    // Keep the incremental build log INSIDE outDir. nest-cli sets
+    // deleteOutDir: true, so dist/ is wiped before every build; with the
+    // default location (packages/api/tsconfig.tsbuildinfo, next to this file)
+    // the log survives that wipe, tsc concludes everything is up to date, and
+    // `nest build` exits 0 having emitted NOTHING. dist/ is then simply
+    // missing, @coforma/api/trpc-router resolves to nothing, and web's
+    // typecheck fails with "collides with a built-in method" — a green build
+    // that produced no build. Colocating the log with the output it describes
+    // makes the two impossible to disagree.
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "noEmit": false
   },
   "include": [

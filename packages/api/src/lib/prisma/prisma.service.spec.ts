@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { LoggerService } from '../logger/logger.service';
 import { PrismaService } from './prisma.service';
 
 describe('PrismaService RLS Methods', () => {
   let prismaService: PrismaService;
 
   beforeEach(async () => {
-    prismaService = new PrismaService();
+    prismaService = new PrismaService(new LoggerService());
     await prismaService.$connect();
     // Clear any existing context
     await prismaService.clearTenantContext();
@@ -106,7 +107,7 @@ describe('PrismaService RLS Methods', () => {
 
   describe('Database connection lifecycle', () => {
     it('should connect to database on module init', async () => {
-      const service = new PrismaService();
+      const service = new PrismaService(new LoggerService());
       await service.onModuleInit();
 
       // Verify connection by running a simple query
@@ -120,16 +121,23 @@ describe('PrismaService RLS Methods', () => {
     });
 
     it('should disconnect from database on module destroy', async () => {
-      const service = new PrismaService();
+      const service = new PrismaService(new LoggerService());
       await service.onModuleInit();
 
-      // Disconnect
+      // This used to assert that querying after disconnect rejects. Prisma
+      // does not promise that: $disconnect() closes the pool, and the next
+      // query transparently reconnects, so the old assertion described
+      // Prisma's internals rather than this class's contract — and would have
+      // failed the moment it ever ran.
+      // What onModuleDestroy actually owes us is that it releases the client.
+      const disconnectSpy = vi.spyOn(service, '$disconnect');
+
       await service.onModuleDestroy();
 
-      // Attempting to query after disconnect should fail
-      await expect(
-        service.$queryRaw`SELECT NOW()`
-      ).rejects.toThrow();
+      expect(disconnectSpy).toHaveBeenCalledTimes(1);
+
+      disconnectSpy.mockRestore();
+      await service.$disconnect();
     });
   });
 });
