@@ -20,8 +20,8 @@
  * relay; never throw. The DB write still succeeds.
  */
 
+import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import { PrismaClient, PersonaRole } from '@prisma/client';
 import { z } from 'zod';
 
 import { requireTenantRole } from '@/lib/auth-helpers';
@@ -42,7 +42,7 @@ function isPrismaKnownError(err: unknown): err is { code: string } {
     typeof err === 'object' &&
     err !== null &&
     'code' in err &&
-    typeof (err as { code: unknown }).code === 'string'
+    typeof err.code === 'string'
   );
 }
 
@@ -127,7 +127,7 @@ export async function POST(req: Request, { params }: RouteParams): Promise<NextR
         userId: user.id,
         title: body.role ?? null,
         company: body.company ?? null,
-        personaRole: body.persona ? (body.persona as PersonaRole) : null,
+        personaRole: body.persona ?? null,
       },
     });
     membershipId = membership.id;
