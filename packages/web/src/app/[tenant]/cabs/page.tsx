@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+
 import { trpc } from '../../../lib/trpc';
 
 export default function CABsPage() {
