@@ -234,8 +234,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # db:migrate:test, NOT db:deploy. db:deploy is the human-facing
+      # production path and stays gated behind LOCAL_PRODUCTION_OPS=yes; that
+      # gate is why this job has never reached `pnpm test`. This job migrates a
+      # throwaway service container, so it takes the narrower guard, which
+      # refuses anything that is not visibly a test database.
       - name: Run database migrations
-        run: pnpm db:deploy
+        run: pnpm db:migrate:test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/coforma_test
 
