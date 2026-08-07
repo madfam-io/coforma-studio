@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
-    "test": "vitest",
+    "test": "vitest run",
     "storybook": "node ../../scripts/require-local-services.mjs && storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

@@ -19,6 +19,12 @@ export default defineConfig({
         'prisma/',
       ],
     },
+    // Every test file in this package shares ONE Postgres database, and
+    // test/setup.ts truncates all tables in afterEach. Run files in parallel
+    // and one worker's cleanup deletes rows another worker is still using,
+    // which surfaces as spurious P2003 foreign-key failures. Serial execution
+    // is what makes this suite deterministic.
+    fileParallelism: false,
     testTimeout: 30000,
     hookTimeout: 30000,
   },
