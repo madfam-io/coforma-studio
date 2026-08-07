@@ -94,7 +94,10 @@ export async function setTenantContext(
   prisma: PrismaClient,
   tenantId: string
 ): Promise<void> {
-  await prisma.$executeRaw`SET app.tenant_id = ${tenantId}`;
+  // Mirrors PrismaService.setTenantContext: Postgres rejects bind parameters
+  // in SET (`SET app.tenant_id = $1` -> 42601), so use set_config(), which
+  // takes the value as a bound parameter.
+  await prisma.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
 }
 
 /**

@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "3.24.1"

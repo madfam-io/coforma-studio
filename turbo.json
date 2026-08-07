@@ -23,6 +23,15 @@
     "test": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
+      // Turbo does not forward undeclared env vars to tasks. Without this list
+      // the api suite receives no DATABASE_URL and every file dies in setup
+      // with 'DATABASE_URL must include "test"'.
+      "env": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "NEXTAUTH_SECRET",
+        "CI"
+      ],
       "inputs": [
         "src/**/*.tsx",
         "src/**/*.ts",

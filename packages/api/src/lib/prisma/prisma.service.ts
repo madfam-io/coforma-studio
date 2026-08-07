@@ -26,7 +26,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    * CRITICAL: This must be called before any tenant-scoped queries
    */
   async setTenantContext(tenantId: string): Promise<void> {
-    await this.$executeRaw`SET app.tenant_id = ${tenantId}`;
+    // Postgres does not accept bind parameters in SET, so the obvious
+    // `SET app.tenant_id = ${tenantId}` compiles to `SET app.tenant_id = $1`
+    // and fails with 42601 (syntax error at or near "$1") on EVERY call —
+    // i.e. RLS context was never actually established. set_config() is the
+    // parameterizable equivalent; the value stays bound, so it is still
+    // injection-safe. `false` keeps this session-scoped, matching the
+    // original SET semantics.
+    await this.$executeRaw`SELECT set_config('app.tenant_id', ${tenantId}, false)`;
   }
 
   /**
