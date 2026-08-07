@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
 import { PrismaClient } from '@prisma/client';
+import { SignJWT } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 

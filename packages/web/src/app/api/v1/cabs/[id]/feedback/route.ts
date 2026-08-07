@@ -21,8 +21,8 @@
  *               their own product flows).
  */
 
-import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { requireSession, type RequireAuthResult } from '@/lib/auth-helpers';
@@ -33,7 +33,7 @@ const prisma = new PrismaClient();
 /** Duck-type narrow for Prisma known-error envelope. */
 function prismaErrorCode(err: unknown): string | null {
   if (typeof err === 'object' && err !== null && 'code' in err) {
-    const c = (err as { code: unknown }).code;
+    const c = (err).code;
     return typeof c === 'string' ? c : null;
   }
   return null;

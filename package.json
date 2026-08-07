@@ -32,6 +32,7 @@
     "prepare": "husky install",
     "db:migrate": "node ./scripts/require-local-db.mjs && pnpm --filter=api prisma migrate dev",
     "db:deploy": "node ./scripts/require-local-production-ops.mjs && pnpm --filter=api prisma migrate deploy",
+    "db:migrate:test": "node ./scripts/require-test-database.mjs && pnpm --filter=api prisma migrate deploy",
     "db:seed": "node ./scripts/require-local-db.mjs && pnpm --filter=api prisma db seed",
     "db:studio": "node ./scripts/require-local-db.mjs && pnpm --filter=api prisma studio",
     "db:reset": "node ./scripts/require-local-destructive.mjs && pnpm --filter=api prisma migrate reset"

@@ -1,6 +1,6 @@
+import type { AppRouter } from '@coforma/api/trpc-router';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '@coforma/api/trpc-router';
 
 /**
  * Create tRPC React hooks
