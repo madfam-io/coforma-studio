@@ -53,8 +53,15 @@ lerna-debug.log*
 next-env.d.ts
 
 # Prisma
-packages/api/prisma/migrations/*/migration.sql
-!packages/api/prisma/migrations/migration_lock.toml
+# NOTE: migration SQL is intentionally NOT ignored.
+# This used to read `packages/api/prisma/migrations/*/migration.sql`, which
+# silently dropped every new migration from every commit — `git add` said
+# nothing and the file simply never landed. The one migration in the repo
+# predates that rule, so it survived and the breakage stayed invisible: the
+# schema kept evolving in schema.prisma while the migration history could not,
+# which is how ~115 columns and a whole table ended up existing only in the
+# datamodel. Migration SQL is source of truth for the database and must be
+# committed.
 
 # Secrets (additional safety)
 *.key

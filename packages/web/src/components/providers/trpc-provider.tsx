@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+
 import { trpc, trpcConfig } from '../../lib/trpc';
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { useState } from 'react';
+
 import { trpc } from '../../../../lib/trpc';
 
 export default function CABDetailPage() {
