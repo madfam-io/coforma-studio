@@ -16,7 +16,16 @@ updates:
     commit-message:
       prefix: 'chore'
       include: 'scope'
-
+    groups:
+      # No grouping at all is why 10 PRs were open at once, one per dependency.
+      # Everything routine now arrives as ONE roll-up per week that can be
+      # merged on green.
+      routine:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
   # GitHub Actions updates
   - package-ecosystem: 'github-actions'
     directory: '/'
