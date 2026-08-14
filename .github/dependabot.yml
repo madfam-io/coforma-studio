@@ -16,6 +16,37 @@ updates:
     commit-message:
       prefix: 'chore'
       include: 'scope'
+    groups:
+      # No grouping at all is why 10 PRs were open at once, one per dependency.
+      # Everything routine now arrives as ONE roll-up per week that can be
+      # merged on green.
+      routine:
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'
+    ignore:
+      # Dev-tooling majors are migration projects, not dependency updates — an
+      # ESLint or TypeScript major rewrites config formats and diagnostics, so
+      # the work is scheduling the migration, not clicking merge. Held so
+      # raising one is deliberate; minor and patch still flow through `routine`.
+      # RUNTIME majors are deliberately NOT ignored (@nestjs, ioredis, @trpc):
+      # those can carry security fixes and each deserves its own decision.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'eslint-config-next'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'vitest'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@testing-library/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@types/*'
+        update-types: ['version-update:semver-major']
 
   # GitHub Actions updates
   - package-ecosystem: 'github-actions'
